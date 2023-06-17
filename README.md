@@ -12,17 +12,29 @@ Puoi avere una macchina virtuale creata e avviata con le informazioni che hai im
 
 Questo script può essere utilizzato dai principianti che non conoscono ancora molto su Proxmox, oppure può essere utilizzato dagli utenti avanzati per avviare rapidamente diverse macchine virtuali. (Consiglio professionale: fornisci la tua chiave di Ansible quando richiesta e quindi esegui il tuo playbook dopo la creazione.)
 
+<h2 align="left"> 💻 Utilizzo</h2>
+<ul>
+  <li>Scarica lo script vmbuilder.sh da questa repository nel tuo nodo di proxmox</li>
+  <li>Esegui chmod +x vmbuilder.sh</li>
+  <li>Se utilizzi le chiavi ssh devi conoscere la cartella</li>
+  <li>Assicurati che gli snippets siano abilitati nel tuo storage. Nella GUI di Proxmox vai su Datacenter, Storage e puoi vedere se sono abilitati o no</li>
+  <li>Esegui lo script con ./vmbuilder.sh</li>
+  <li>Segui quello che ti dice lo script e sei pronto ad avere la tua macchina virtuale in pochissimo tempo!</li>
+</ul>
 
-
-Come utilizzare lo script
-
-   1) Scarica lo script vmbuilder.sh da questa repository nel tuo nodo di proxmox
-   2) Esegui chmod +x vmbuilder.sh
-   3) Se utilizzi le chiavi ssh devi conoscere la cartella
-   4) Assicurati che gli snippets siano abilitati nel tuo storage. Nella GUI di Proxmox vai su Datacenter, Storage e puoi vedere se sono abilitati o no.
-   5) Esegui lo script con ./vmbuilder.sh
-   6) Segui quello che ti dice lo script e sei pronto ad avere la tua macchina virtuale in pochissimo tempo!
-
+<h2 align="left"> 💿 Immagini</h2>
+<ul>
+  <li>Ubuntu Lunar 23.04</li>
+  <li>Ubuntu Jammy 22.04</li>
+  <li>Ubuntu Focal 20.04</li>
+  <li>Ubuntu 20.04 Minimal</li>
+  <li>CentOS 8</li>
+  <li>CentOS 7</li>
+  <li>Debian 12</li>
+  <li>Debian 11</li>
+  <li>Arch Linux</li>
+  <li>Fedora 38</li>
+</ul>
 
 
 Features
@@ -49,26 +61,12 @@ Features
    - Added the option to start after creation or not to start
    - Asks what Proxmox node to have the VM running after all is complete
    - Makes it simple to learn some of the CLI of proxmox (by reviewing the script) and some awesome built in featues of Proxmox to get things up and running fast and easily
- Cloud Images currently available with this script
-   - Ubuntu Lunar 23.04
-   - Ubuntu Jammy 22.04
-   - Ubuntu Focal 20.04
-   - Ubuntu 20.04 Minimal
-   - CentOS 7
-   - CentOS 8
-   - Debian 12
-   - Debian 11
-   - Arch Linux
-   - Rancher OS
-   - Fedora 32
-   - More to come or request one to be added to this script
   
  Future things for the script
 
     - clean old images
     - Add an option to use IPV6 or IPV4
     - Alpine Linux
-    - Arch Linux
     - Rancher OS works, but auto loads in and does not use username/password but the other variables work
     - Fedora Cloud Image works, but doesn't transfer all user.yaml (like host name) snippet info yet...but works with username/password/sshkeys
     - CentOS 8 Cloud Image works, but doesn't transfer all user.yaml (like host name) snippet info yet...but works with username/password/sshkeys 
