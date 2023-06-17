@@ -516,7 +516,7 @@ echo
 echo
 echo "Please select the cloud image you would like to use"
 PS3='Select an option and press Enter: '
-options=("Ubuntu Jammy 22.04 Cloud Image" "Ubuntu Lunar 23.04 Cloud Image" "Arch Linux Cloud Image" "Ubuntu Focal 20.04 Cloud Image" "Ubuntu Minimal Focal 20.04 Cloud Image" "CentOS 7 Cloud Image" "Debian 12 Cloud Image" "Debian 11 Cloud Image" "CentOS 8 Cloud Image" "Fedora 38 Cloud Image")
+options=("Ubuntu Jammy 22.04 Cloud Image" "Ubuntu Lunar 23.04 Cloud Image" "Arch Linux Cloud Image" "Ubuntu Focal 20.04 Cloud Image" "Ubuntu Minimal Focal 20.04 Cloud Image" "CentOS 7 Cloud Image" "Debian 12 Cloud Image" "Debian 11 Cloud Image" "CentOS 8 Cloud Image" "Fedora 38 Cloud Image" "Rocky Linux 9 Cloud Image")
 select osopt in "${options[@]}"
 do
   case $osopt in
@@ -550,6 +550,9 @@ do
         "Fedora 38 Cloud Image")
           [ -f "$isostorage/Fedora-Cloud-Base-38-1.6.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://download.fedoraproject.org/pub/fedora/linux/releases/38/Cloud/x86_64/images/Fedora-Cloud-Base-38-1.6.x86_64.qcow2 -P $isostorage && break
           ;;
+         "Rocky Linux 9 Cloud Image")
+         [ -f "$isostorage/Rocky-9-GenericCloud.latest.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://download.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2 -P $isostorage && break
+          ;;
         *) echo "invalid option";;
   esac
 done
@@ -570,6 +573,9 @@ then
 elif [ "$osopt" == "CentOS 7 Cloud Image" ];
 then
    cloudos=$isostorage'CentOS-7-x86_64-GenericCloud.qcow2'
+elif [ "$osopt" == "Rocky Linux 9 Cloud Image" ];
+then
+   cloudos=$isostorage'Rocky-9-GenericCloud.latest.x86_64.qcow2'
 elif [ "$osopt" == "Debian 12 Cloud Image" ];
 then
    cloudos=$isostorage'debian-12-generic-amd64.qcow2'
