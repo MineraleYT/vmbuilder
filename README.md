@@ -64,7 +64,7 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
 </ul>
 
 <h2 align="left">🔮 Aggiornamenti futuri</h2>
-    <li><s>Cancellare immagini obsolete</s>s></li>
+    <li><s>Cancellare immagini obsolete</s></li>
     <li>Alma Linux</li>
     <li>Rocky Linux</li>
     <li>Pacchetti aggiuntivi</li>
