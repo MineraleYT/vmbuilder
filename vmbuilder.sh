@@ -516,15 +516,12 @@ echo
 echo
 echo "Please select the cloud image you would like to use"
 PS3='Select an option and press Enter: '
-options=("Ubuntu Jammy 22.04 Cloud Image" "Ubuntu Lunar 23.04 Cloud Image" "Arch Linux Cloud Image" "Ubuntu Focal 20.04 Cloud Image" "Ubuntu Minimal Focal 20.04 Cloud Image" "CentOS 7 Cloud Image" "Debian 12 Cloud Image" "Debian 11 Cloud Image" "Ubuntu 18.04 Bionic Image" "CentOS 8 Cloud Image" "Fedora 38 Cloud Image" "Rancher OS Cloud Image")
+options=("Ubuntu Jammy 22.04 Cloud Image" "Ubuntu Lunar 23.04 Cloud Image" "Arch Linux Cloud Image" "Ubuntu Focal 20.04 Cloud Image" "Ubuntu Minimal Focal 20.04 Cloud Image" "CentOS 7 Cloud Image" "Debian 12 Cloud Image" "Debian 11 Cloud Image" "CentOS 8 Cloud Image" "Fedora 38 Cloud Image" "Rocky Linux 9 Cloud Image")
 select osopt in "${options[@]}"
 do
   case $osopt in
         "Ubuntu Jammy 22.04 Cloud Image")
           [ -f "$isostorage/jammy-server-cloudimg-amd64-disk-kvm.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img -P $isostorage && break
-          ;;
-        "Ubuntu Hirsute Hippo 21.04 Cloud Image")
-          [ -f "$isostorage/hirsute-server-cloudimg-amd64-disk-kvm.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/hirsute/current/hirsute-server-cloudimg-amd64-disk-kvm.img -P $isostorage && break
           ;;
         "Arch Linux Cloud Image")
           [ -f "$isostorage/Arch-Linux-x86_64-cloudimg.qcow2" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2 -P $isostorage && break
@@ -544,17 +541,14 @@ do
         "Debian 9 Cloud Image")
           [ -f "$isostorage/debian-9-openstack-amd64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cdimage.debian.org/cdimage/openstack/current-9/debian-9-openstack-amd64.qcow2 -P $isostorage && break
           ;;
-        "Ubuntu 18.04 Bionic Image")
-          [ -f "$isostorage/bionic-server-cloudimg-amd64.img" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img -P $isostorage && break
-          ;;
         "CentOS 8 Cloud Image")
           [ -f "$isostorage/CentOS-8-GenericCloud-8.2.2004-20200611.2.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.2.2004-20200611.2.x86_64.qcow2 -P $isostorage && break
           ;;
         "Fedora 38 Cloud Image")
           [ -f "$isostorage/Fedora-Cloud-Base-38-1.6.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://download.fedoraproject.org/pub/fedora/linux/releases/38/Cloud/x86_64/images/Fedora-Cloud-Base-38-1.6.x86_64.qcow2 -P $isostorage && break
           ;;
-        "Rancher OS Cloud Image")
-          [ -f "$isostorage/rancheros-openstack.img" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://github.com/rancher/os/releases/download/v1.5.5/rancheros-openstack.img -P $isostorage && break
+         "Rocky Linux 9 Cloud Image")
+         [ -f "$isostorage/Rocky-9-GenericCloud.latest.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://download.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2 -P $isostorage && break
           ;;
         *) echo "invalid option";;
   esac
@@ -576,24 +570,24 @@ then
 elif [ "$osopt" == "CentOS 7 Cloud Image" ];
 then
    cloudos=$isostorage'CentOS-7-x86_64-GenericCloud.qcow2'
-elif [ "$osopt" == "Debian 10 Cloud Image" ];
+elif [ "$osopt" == "Rocky Linux 9 Cloud Image" ];
 then
-   cloudos=$isostorage'debian-10-openstack-amd64.qcow2'
-elif [ "$osopt" == "Debian 9 Cloud Image" ];
+   cloudos=$isostorage'Rocky-9-GenericCloud.latest.x86_64.qcow2'
+elif [ "$osopt" == "Debian 12 Cloud Image" ];
 then
-   cloudos=$isostorage'debian-9-openstack-amd64.qcow2'
-elif [ "$osopt" == "Ubuntu 18.04 Bionic Image" ];
+   cloudos=$isostorage'debian-12-openstack-amd64.qcow2'
+elif [ "$osopt" == "Debian 11 Cloud Image" ];
 then
-   cloudos=$isostorage'bionic-server-cloudimg-amd64.img'
+   cloudos=$isostorage'debian-11-generic-amd64.qcow2'
 elif [ "$osopt" == "CentOS 8 Cloud Image" ];
 then
    cloudos=$isostorage'CentOS-8-GenericCloud-8.2.2004-20200611.2.x86_64.qcow2'
 elif [ "$osopt" == "Fedora 38 Cloud Image" ];
 then
    cloudos=$isostorage'Fedora-Cloud-Base-38-1.6.x86_64.qcow2'
-elif [ "$osopt" == "Rancher OS Cloud Image" ];
-then   
-   cloudos=$isostorage'rancheros-openstack.img'
+elif [ "$osopt" == "Ubuntu Lunar 23.04 Cloud Image" ];
+then
+   cloudos=$isostorage'lunar-server-cloudimg-amd64-disk-kvm.img'
 else [ "$osopt" == "Ubuntu Jammy 22.04 Cloud Image" ];
    cloudos=$isostorage'jammy-server-cloudimg-amd64-disk-kvm.img'
 fi
