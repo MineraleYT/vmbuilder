@@ -397,7 +397,7 @@ echo
 # qemu-guest-agent
 while true
 do
- read -r -p "Would you like to install qemu-gust-agent on first run? (Enter Y/n) " qemuyesno
+ read -r -p "Would you like to install qemu-guest-agent on first run? (Enter Y/n) " qemuyesno
 
  case $qemuyesno in
      [yY][eE][sS]|[yY])
@@ -521,6 +521,9 @@ options=("Ubuntu Jammy 22.04 Cloud Image" "Ubuntu Lunar 23.04 Cloud Image" "Arch
 select osopt in "${options[@]}"
 do
   case $osopt in
+        "Ubuntu Lunar 23.04 Cloud Image"
+          [ -f "$isostorage/lunar-server-cloudimg-amd64-disk-kvm.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && https://cloud-images.ubuntu.com/lunar/current/lunar-server-cloudimg-amd64-disk-kvm.img -P $isostorage && break
+          ;;
         "Ubuntu Jammy 22.04 Cloud Image")
           [ -f "$isostorage/jammy-server-cloudimg-amd64-disk-kvm.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img -P $isostorage && break
           ;;
