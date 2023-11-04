@@ -517,12 +517,12 @@ echo
 echo
 echo "Please select the cloud image you would like to use"
 PS3='Select an option and press Enter: '
-options=("Ubuntu Jammy 22.04 Cloud Image" "Ubuntu Lunar 23.04 Cloud Image" "Arch Linux Cloud Image" "Ubuntu Focal 20.04 Cloud Image" "Ubuntu Minimal Focal 20.04 Cloud Image" "CentOS 7 Cloud Image" "Debian 12 Cloud Image" "Debian 11 Cloud Image" "CentOS 8 Cloud Image" "Fedora 38 Cloud Image" "Rocky Linux 9 Cloud Image")
+options=("Ubuntu Jammy 22.04 Cloud Image" "Ubuntu Mantic 23.10 Cloud Image" "Arch Linux Cloud Image" "Ubuntu Focal 20.04 Cloud Image" "AlmaLinux OS 9.2" "CentOS 7 Cloud Image" "Debian 12 Cloud Image" "Debian 11 Cloud Image" "CentOS 8 Cloud Image" "Fedora 38 Cloud Image" "Rocky Linux 9.2 Cloud Image")
 select osopt in "${options[@]}"
 do
   case $osopt in
-        "Ubuntu Lunar 23.04 Cloud Image")
-          [ -f "$isostorage/lunar-server-cloudimg-amd64-disk-kvm.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/lunar/current/lunar-server-cloudimg-amd64-disk-kvm.img -P $isostorage && break
+        "Ubuntu Mantic 23.10 Cloud Image")
+          [ -f "$isostorage/mantic-server-cloudimg-amd64-disk-kvm.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/mantic/current/mantic-server-cloudimg-amd64.img -P $isostorage && break
           ;;
         "Ubuntu Jammy 22.04 Cloud Image")
           [ -f "$isostorage/jammy-server-cloudimg-amd64-disk-kvm.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img -P $isostorage && break
@@ -533,8 +533,8 @@ do
         "Ubuntu Focal 20.04 Cloud Image")
           [ -f "$isostorage/focal-server-cloudimg-amd64-disk-kvm.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64-disk-kvm.img -P $isostorage && break
           ;;
-        "Ubuntu Minimal Focal 20.04 Cloud Image")
-          [ -f "$isostorage/ubuntu-20.04-minimal-cloudimg-amd64.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/minimal/releases/focal/release/ubuntu-20.04-minimal-cloudimg-amd64.img -P $isostorage && break
+        "AlmaLinux OS 9.2")
+          [ -f "$isostorage/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://repo.almalinux.org/almalinux/9/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2 -P $isostorage && break
           ;;
         "CentOS 7 Cloud Image")
           [ -f "$isostorage/CentOS-7-x86_64-GenericCloud.qcow2" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 -P $isostorage && break
@@ -551,7 +551,7 @@ do
         "Fedora 38 Cloud Image")
           [ -f "$isostorage/Fedora-Cloud-Base-38-1.6.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://download.fedoraproject.org/pub/fedora/linux/releases/38/Cloud/x86_64/images/Fedora-Cloud-Base-38-1.6.x86_64.qcow2 -P $isostorage && break
           ;;
-         "Rocky Linux 9 Cloud Image")
+         "Rocky Linux 9.2 Cloud Image")
          [ -f "$isostorage/Rocky-9-GenericCloud.latest.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://download.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2 -P $isostorage && break
           ;;
         *) echo "invalid option";;
@@ -568,13 +568,13 @@ then
 elif [ "$osopt" == "Ubuntu Focal 20.04 Cloud Image" ];
 then
    cloudos=$isostorage'focal-server-cloudimg-amd64-disk-kvm.img'
-elif [ "$osopt" == "Ubuntu Minimal Focal 20.04 Cloud Image" ];
+elif [ "$osopt" == "AlmaLinux OS 9.2" ];
 then
-   cloudos=$isostorage'ubuntu-20.04-minimal-cloudimg-amd64.img'
+   cloudos=$isostorage'AlmaLinux-9-GenericCloud-latest.x86_64.qcow2'
 elif [ "$osopt" == "CentOS 7 Cloud Image" ];
 then
    cloudos=$isostorage'CentOS-7-x86_64-GenericCloud.qcow2'
-elif [ "$osopt" == "Rocky Linux 9 Cloud Image" ];
+elif [ "$osopt" == "Rocky Linux 9.2 Cloud Image" ];
 then
    cloudos=$isostorage'Rocky-9-GenericCloud.latest.x86_64.qcow2'
 elif [ "$osopt" == "Debian 12 Cloud Image" ];
@@ -589,9 +589,9 @@ then
 elif [ "$osopt" == "Fedora 38 Cloud Image" ];
 then
    cloudos=$isostorage'Fedora-Cloud-Base-38-1.6.x86_64.qcow2'
-elif [ "$osopt" == "Ubuntu Lunar 23.04 Cloud Image" ];
+elif [ "$osopt" == "Ubuntu Mantic 23.04 Cloud Image" ];
 then
-   cloudos=$isostorage'lunar-server-cloudimg-amd64-disk-kvm.img'
+   cloudos=$isostorage'mantic-server-cloudimg-amd64.img'
 else [ "$osopt" == "Ubuntu Jammy 22.04 Cloud Image" ];
    cloudos=$isostorage'jammy-server-cloudimg-amd64-disk-kvm.img'
 fi
