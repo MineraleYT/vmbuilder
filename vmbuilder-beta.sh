@@ -413,9 +413,31 @@ do
  ;;
  esac
 done
-
 echo
 
+while true
+do
+ read -r -p "Do you want install additional packages? (Enter Y/n)? " packyesorno
+
+ case $packyesorno in
+     [yY][eE][sS]|[yY])
+ echo
+ PACKALLOW=y
+ printf %s "Write the packages you want: "
+ read -r packsel
+ break
+ ;;
+     [nN][oO]|[nN])
+ PACKALLOW=n
+ echo
+ break
+        ;;
+     *)
+ echo "Invalid input, please enter Y/N or yes/no"
+ ;;
+ esac
+done
+echo
 #while true
 #do
 # read -r -p "Do you want the VM to autostart after you create it here? (Enter Y/n)? " AUTOSTARTS
@@ -617,6 +639,10 @@ echo "users:" >> $snippetstorage$VMID.yaml
 echo "  - default" >> $snippetstorage$VMID.yaml
 echo "package_upgrade: true" >> $snippetstorage$VMID.yaml
 echo "packages:" >> $snippetstorage$VMID.yaml
+if [[ $PACKALLOW =~ ^[Yy]$ || $PACKALLOW =~ ^[yY][eE][sS] ]]
+then
+    echo " - $packsel" >> $snippetstorage$VMID.yaml
+fi
 if [[ $QEMUGUESTAGENT =~ ^[Yy]$ || $QEMUGUESTAGENT =~ ^[yY][eE][sS] ]]
 then
     echo " - qemu-guest-agent" >> $snippetstorage$VMID.yaml
