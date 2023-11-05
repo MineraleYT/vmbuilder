@@ -24,16 +24,17 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
 
 <h2 align="left"> 💿 Immagini</h2>
 <ul>
-  <li>Ubuntu Lunar 23.04</li>
+  <li>Ubuntu Lunar 23.10</li>
   <li>Ubuntu Jammy 22.04</li>
   <li>Ubuntu Focal 20.04</li>
-  <li>Ubuntu 20.04 Minimal</li>
   <li>CentOS 8</li>
   <li>CentOS 7</li>
   <li>Debian 12</li>
   <li>Debian 11</li>
   <li>Arch Linux</li>
   <li>Fedora 38</li>
+  <li>Rocky Linux 9.2</li>
+  <li>AlmaLinux OS 9.2</li>
 </ul>
 
 <h2 align="left">⚙️ Funzionalità</h2>
