@@ -67,5 +67,5 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
     <li>✅ Cancellare immagini obsolete</li>
     <li>✅ Alma Linux</li>
     <li>✅ Rocky Linux</li>
-    <li>✅ Pacchetti aggiuntivi</li>
-    <li>❗ Traduzione script</li>
+    <li>👨🏻‍💻 Pacchetti aggiuntivi</li>
+    <li>👨🏻‍💻 Traduzione script</li>
