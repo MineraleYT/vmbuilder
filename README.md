@@ -1,6 +1,7 @@
-
-<h2 align="center"> 🚨 Lo script è in aggiornamento 🚨</h2>
-
+<div align="center">
+  
+![vm-builder](https://github.com/MinerAle00/vmbuilder/assets/66887063/8005bd67-1c8c-4d6c-ab51-3ad0da63c311)
+</div>
 
 Questo script è stato testato e funziona con Proxmox 7 e 8. Se ci sono problemi, per favore segnalali e li esaminerò. Assicurati anche di avere impostato gli snippet perché sembra essere un problema comune durante l'esecuzione dello script, quindi assicurati che gli snippet siano configurati in proxmox o potrebbero sorgere problemi. Mi occuperò di aggiornare le immagini cloud disponibili.
 
