@@ -32,6 +32,7 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
   <li>Debian 12</li>
   <li>Debian 11</li>
   <li>Arch Linux</li>
+  <li>Fedora 39</li>
   <li>Fedora 38</li>
   <li>Rocky Linux 9.2</li>
   <li>AlmaLinux OS 9.2</li>
