@@ -1,0 +1,5 @@
+##Template for new packages
+##Please remove - if you don't use it
+- pack1
+- pack2
+- pack3

@@ -2,15 +2,15 @@
 <h2 align="center"> 🚨 Lo script è in aggiornamento 🚨</h2>
 
 
-Questo script funziona ancora in un nuovo ambiente proxmox. Se ci sono problemi, per favore segnalali e li esaminerò. Assicurati anche di avere impostato gli snippet perché sembra essere un problema comune durante l'esecuzione dello script, quindi assicurati che gli snippet siano configurati in proxmox o potrebbero sorgere problemi. Mi occuperò di aggiornare le immagini cloud disponibili.
+Questo script è stato testato e funziona con Proxmox 7 e 8. Se ci sono problemi, per favore segnalali e li esaminerò. Assicurati anche di avere impostato gli snippet perché sembra essere un problema comune durante l'esecuzione dello script, quindi assicurati che gli snippet siano configurati in proxmox o potrebbero sorgere problemi. Mi occuperò di aggiornare le immagini cloud disponibili.
 
 *****************************
 
 <h2 align="left">📑 Descrizione</h2>
 
-Puoi avere una macchina virtuale creata e avviata con le informazioni che hai impostato entro due minuti. Si scarica automaticamente l'immagine cloud se necessario e una volta impostate tutte le informazioni, la avvia automaticamente per te.
+Puoi avere una macchina virtuale creata e avviata con le informazioni che hai impostato entro due minuti. Viene scaricata l'ultima immagine cloud disponibile (se necessario) e può essere impostata con diverse impostazioni.
 
-Questo script può essere utilizzato dai principianti che non conoscono ancora molto su Proxmox, oppure può essere utilizzato dagli utenti avanzati per avviare rapidamente diverse macchine virtuali. (Consiglio professionale: fornisci la tua chiave di Ansible quando richiesta e quindi esegui il tuo playbook dopo la creazione.)
+Questo script può essere utilizzato dai principianti che non conoscono ancora molto su Proxmox, oppure può essere utilizzato dagli utenti avanzati per avviare rapidamente diverse macchine virtuali.
 
 <h2 align="left"> 💻 Utilizzo</h2>
 <ul>
@@ -22,18 +22,20 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
   <li>Segui quello che ti dice lo script e sei pronto ad avere la tua macchina virtuale in pochissimo tempo!</li>
 </ul>
 
-<h2 align="left"> 💿 Immagini</h2>
+<h2 align="left"> 💿 Immagini disponibili</h2>
 <ul>
-  <li>Ubuntu Lunar 23.04</li>
+  <li>Ubuntu Lunar 23.10</li>
   <li>Ubuntu Jammy 22.04</li>
   <li>Ubuntu Focal 20.04</li>
-  <li>Ubuntu 20.04 Minimal</li>
   <li>CentOS 8</li>
   <li>CentOS 7</li>
   <li>Debian 12</li>
   <li>Debian 11</li>
   <li>Arch Linux</li>
+  <li>Fedora 39</li>
   <li>Fedora 38</li>
+  <li>Rocky Linux 9.2</li>
+  <li>AlmaLinux OS 9.2</li>
 </ul>
 
 <h2 align="left">⚙️ Funzionalità</h2>
@@ -44,28 +46,26 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
  Il programma verifica quali spazi di archiviazione degli snippet sono disponibili sul nodo Proxmox e puoi selezionare quello che desideri utilizzare.
  Puoi personalizzare:
  <ul>
-   <li>Hostname
-   <li>ID number (It checks ID's in the entire cluster and also provides next number if you don't use custom numbers)</li>
+   <li>Nome VM</li>
+   <li>Numero VM (viene comunque controllato se il numero assegnato è già presente sui nodi Proxmox)</li>
    <li>Username</li>
    <li>Password</li>
-   <li>Add a SSH key file (example id_rsa.pub)</li>
-   <li>Asks if you want to enable SSH password authentication (Keys are safer)</li>
-   <li>Select storage you want to run the Virtual Machine on</li>
-   <li>Select the storage location of your ISO files</li>
-   <li>Select the storage and location of your snippet files (for user.yaml)</li>
-   <li>Check if you want to use DHCP or enter Static IP</li>
-   <li>If you want to enter a VLAN number</li>
-   <li>If you want to resize the cloud image storage so you can have more space</li>
-   <li>It lets you set the number of cores and memory for the Virtual Machine</li>
-   <li>Asks if you want it to install qemu-guest-agent (see Proxmox's wiki for more infomation) - Great to have out of the box from the Admin side of Proxmox</li>
-   <li>Added the option to start after creation or not to start</li>
-   <li>Asks what Proxmox node to have the VM running after all is complete</li>
-   <li>Makes it simple to learn some of the CLI of proxmox (by reviewing the script) and some awesome built in featues of Proxmox to get things up and running fast and easily</li>
+   <li>Aggiungi una chiave SSH (ad esempio id_rsa.pub)</li>
+   <li>Autenticazione SSH utilizzando la password (le chiavi sono molto più sicuri)</li>
+   <li>Seleziona lo storage per la VM</li>
+   <li>Seleziona lo storage per la tua ISO</li>
+   <li>Seleziona lo storage per i file snippet (per il file user.yml)</li>
+   <li>Seleziona se vuoi utilizzare il DHCP o l'IP statico</li>
+   <li>Seleziona il numero della VLAN</li>
+   <li>Seleziona se vuoi aumentare lo spazio della Cloud Image</li>
+   <li>Seleziona il numero di core e la ram da dedicare alla VM</li>
+   <li>Scegli se vuoi installare automaticamente i qemu-guest-agent (altamente consigliato!)</li>
+   <li>Seleziona su che nodo di Proxmox vuoi che la macchina virtuale funzioni</li>
 </ul>
 
 <h2 align="left">🔮 Aggiornamenti futuri</h2>
     <li>✅ Cancellare immagini obsolete</li>
-    <li>❗ Alma Linux</li>
-    <li>🔜 Rocky Linux</li>
-    <li>❗ Pacchetti aggiuntivi</li>
+    <li>✅ Alma Linux</li>
+    <li>✅ Rocky Linux</li>
+    <li>✅ Pacchetti aggiuntivi</li>
     <li>❗ Traduzione script</li>
