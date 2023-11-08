@@ -575,6 +575,12 @@ do
         "Fedora 39 Cloud Image")
          [ -f "$isostorage/Fedora-Server-KVM-39-1.5.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://mirror.init7.net/fedora/fedora/linux/releases/39/Server/x86_64/images/Fedora-Server-KVM-39-1.5.x86_64.qcow2 -P $isostorage && break
           ;;
+        "Debian 12 Cloud Image")
+         [ -f "$isostorage/debian-12-generic-amd64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2 -P $isostorage && break
+          ;;
+        "Debian 11 Cloud Image")
+         [ -f "$isostorage/debian-11-generic-amd64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2 -P $isostorage && break
+          ;;
         *) echo "invalid option";;
   esac
 done
@@ -600,7 +606,7 @@ then
    cloudos=$isostorage'Rocky-9-GenericCloud.latest.x86_64.qcow2'
 elif [ "$osopt" == "Debian 12 Cloud Image" ];
 then
-   cloudos=$isostorage'debian-12-openstack-amd64.qcow2'
+   cloudos=$isostorage'debian-12-generic-amd64.qcow2'
 elif [ "$osopt" == "Debian 11 Cloud Image" ];
 then
    cloudos=$isostorage'debian-11-generic-amd64.qcow2'
