@@ -10,6 +10,7 @@ Questo script è stato testato e funziona con Proxmox 7 e 8. Se ci sono problemi
   
 https://github.com/MinerAle00/vmbuilder/assets/66887063/d38db6bd-6409-4ab1-a605-c186cde6d696
 </div>
+
 *****************************
 
 <h2 align="left">📑 Descrizione</h2>
