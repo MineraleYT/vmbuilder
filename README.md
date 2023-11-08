@@ -6,6 +6,11 @@
 Questo script è stato testato e funziona con Proxmox 7 e 8. Se ci sono problemi, per favore segnalali e li esaminerò. Assicurati anche di avere impostato gli snippet perché sembra essere un problema comune durante l'esecuzione dello script, quindi assicurati che gli snippet siano configurati in proxmox o potrebbero sorgere problemi. Mi occuperò di aggiornare le immagini cloud disponibili.
 
 *****************************
+<div align="center">
+  
+https://github.com/MinerAle00/vmbuilder/assets/66887063/d38db6bd-6409-4ab1-a605-c186cde6d696
+</div>
+*****************************
 
 <h2 align="left">📑 Descrizione</h2>
 
