@@ -41,8 +41,8 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
   <li>Arch Linux</li>
   <li>Fedora 39</li>
   <li>Fedora 38</li>
-  <li>Rocky Linux 9.2</li>
-  <li>AlmaLinux OS 9.2</li>
+  <li>Rocky Linux 9.3</li>
+  <li>AlmaLinux 9.3</li>
 </ul>
 
 <h2 align="left">⚙️ Funzionalità</h2>
