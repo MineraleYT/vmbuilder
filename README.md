@@ -34,7 +34,6 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
   <li>Ubuntu Lunar 23.10</li>
   <li>Ubuntu Jammy 22.04</li>
   <li>Ubuntu Focal 20.04</li>
-  <li>CentOS 8</li>
   <li>CentOS 7</li>
   <li>Debian 12</li>
   <li>Debian 11</li>
