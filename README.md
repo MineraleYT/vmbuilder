@@ -70,8 +70,5 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
 </ul>
 
 <h2 align="left">🔮 Aggiornamenti futuri</h2>
-    <li>✅ Cancellare immagini obsolete</li>
-    <li>✅ Alma Linux</li>
-    <li>✅ Rocky Linux</li>
     <li>👨🏻‍💻 Pacchetti aggiuntivi</li>
     <li>👨🏻‍💻 Traduzione script</li>
