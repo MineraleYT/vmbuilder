@@ -560,9 +560,6 @@ do
         "AlmaLinux 9.3 Cloud Image")
           [ -f "$isostorage/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://repo.almalinux.org/almalinux/9.3/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2 -P $isostorage && break
           ;;
-        "CentOS 8 Cloud Image")
-          [ -f "$isostorage/CentOS-8-GenericCloud-8.2.2004-20200611.2.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.2.2004-20200611.2.x86_64.qcow2 -P $isostorage && break
-          ;;
         "Fedora 39 Cloud Image")
           [ -f "$isostorage/Fedora-Server-KVM-39-1.5.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://mirror.init7.net/fedora/fedora/linux/releases/39/Server/x86_64/images/Fedora-Server-KVM-39-1.5.x86_64.qcow2 -P $isostorage && break
           ;;
