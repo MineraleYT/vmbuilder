@@ -341,33 +341,6 @@ do
 done
 echo
 
-# Asking what type of processor and virtual machine to use
-# Default cpu type kvm and vm type i440fx
-while true
-do
- echo "The default CPU type is set to kvm and the default machine type is set to i440fx"
- read -r -p "Would you like to change the cpu and vm type? " vmtypeyesorno
-
- case $vmtypeyesorno in
-    [yY][eE][sS]|[yY])
- echo
- read -p "Enter the cpu type for VM $VMID: " 
- echo
- read -p "Enter the vm type for VM $VMID (i440fx or q35): "
- break
- ;;
-     [nN][oO]|[nN])
- CPUTYPE="kvm"
- VMTYPE="i440fx"
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/n or Yes/no"
- ;;
- esac
-done
-echo
-
 # This block is see if they want to add a key to the VM
 # and then it checks the path to it and checks to make sure it exists
 echo
@@ -704,7 +677,7 @@ then
 fi
 
 # create a new VM
-qm create $VMID --name $NEWHOSTNAME --cores $CORES --onboot 1 --cpu $CPUTYPE --machine $VMTYPE --memory $MEMORY --agent 1,fstrim_cloned_disks=1
+qm create $VMID --name $NEWHOSTNAME --cores $CORES --onboot 1 --memory $MEMORY --agent 1,fstrim_cloned_disks=1
 
 if [[ $VLANYESORNO =~ ^[Yy]$ || $VLANYESORNO =~ ^[yY][eE][sS] ]]
 then
