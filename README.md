@@ -32,17 +32,17 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
 <h2 align="left"> 💿 Immagini disponibili</h2>
 <ul>
   <li>Ubuntu Noble 24.04</li>
-  <li>Ubuntu Lunar 23.10</li>
-  <li>Ubuntu Jammy 22.04</li>
-  <li>Ubuntu Focal 20.04</li>
-  <li>CentOS 7</li>
-  <li>Debian 12</li>
-  <li>Debian 11</li>
+  <li>Ubuntu Lunar 23.10 - EOL Jul 2024</li>
+  <li>Ubuntu Jammy 22.04 - EOL Apr 2027</li>
+  <li>Ubuntu Focal 20.04 - EOL Apr 2025	</li>
+  <li>CentOS 7 - EOL Jun 2024</li>
+  <li>Debian 12 - EOL Jun 2026</li>
+  <li>Debian 11 - EOL Jul 2024</li>
   <li>Arch Linux</li>
-  <li>Fedora 39</li>
-  <li>Fedora 38</li>
-  <li>Rocky Linux 9.3</li>
-  <li>AlmaLinux 9.3</li>
+  <li>Fedora 39 - EOL Dec 2024</li>
+  <li>Fedora 38 - EOL May 2024</li>
+  <li>Rocky Linux 9.3 - EOL May 2027</li>
+  <li>AlmaLinux 9.3 - EOL May 2027</li>
 </ul>
 
 <h2 align="left">⚙️ Funzionalità</h2>
