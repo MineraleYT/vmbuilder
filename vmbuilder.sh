@@ -346,14 +346,14 @@ echo
 while true
 do
  echo "The default CPU type is set to kvm and the default machine type is set to i440fx"
- read -r -p "Would you like to change the cpu and vm type? " vmtypeyesorno
+ read -r -p "Would you like to change the cpu and vm type (Enter Y/n)? " vmtypeyesorno
 
  case $vmtypeyesorno in
     [yY][eE][sS]|[yY])
  echo
- read -p "Enter the cpu type for VM $VMID: " 
+ read -p "Enter the cpu type for VM $VMID: " CPUTYPE
  echo
- read -p "Enter the vm type for VM $VMID (i440fx or q35): "
+ read -p "Enter the vm type for VM $VMID (i440fx or q35): " VMTYPE
  break
  ;;
      [nN][oO]|[nN])
