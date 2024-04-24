@@ -31,6 +31,7 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
 
 <h2 align="left"> 💿 Immagini disponibili</h2>
 <ul>
+  <li>Ubuntu Noble 24.04</li>
   <li>Ubuntu Lunar 23.10</li>
   <li>Ubuntu Jammy 22.04</li>
   <li>Ubuntu Focal 20.04</li>
