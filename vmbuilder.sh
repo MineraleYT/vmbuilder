@@ -19,7 +19,8 @@ echo
 echo
 while true; do
    read -r -p "Enter desired hostname for the Virtual Machine: " NEWHOSTNAME
-   if [[ ! $NEWHOSTNAME == *['!'@#\$%^\&*()\_+\']* ]];then
+   if [[ ! $NEWHOSTNAME == *['!'@#\$%^\&*()\_+\']* ]];
+   then
       break;
    else
       echo "Contains a character not allowed for a hostname, please try again"
@@ -340,6 +341,33 @@ do
 done
 echo
 
+# Asking what type of processor and virtual machine to use
+# Default cpu type kvm and vm type i440fx
+while true
+do
+ echo "The default CPU type is set to kvm and the default machine type is set to i440fx"
+ read -r -p "Would you like to change the cpu and vm type?"
+
+ case $vmtypeyesorno in
+    [yY][eE][sS]|[yY])
+ echo
+ read -p "Enter the cpu type for VM $VMID: " 
+ echo
+ read -p "Enter the vm type for VM $VMID (i440fx or q35): "
+ break
+ ;;
+     [nN][oO]|[nN])
+ CPUTYPE="kvm"
+ VMTYPE="i440fx"
+ break
+        ;;
+     *)
+ echo "Invalid input, please enter Y/n or Yes/no"
+ ;;
+ esac
+done
+echo
+
 # This block is see if they want to add a key to the VM
 # and then it checks the path to it and checks to make sure it exists
 echo
@@ -414,6 +442,26 @@ do
  esac
 done
 echo
+while true
+do
+ read -r -p "Do you want the VM to autostart after you create it here? (Enter Y/n)? " AUTOSTARTS
+
+ case $AUTOSTARTS in
+     [yY][eE][sS]|[yY])
+ echo
+ AUTOSTART=yes
+ break
+ ;;
+     [nN][oO]|[nN])
+ AUTOSTART=no
+ echo
+ break
+        ;;
+     *)
+ echo "Invalid input, please enter Y/N or yes/no"
+ ;;
+ esac
+done
 
 # while true
 # do
@@ -656,7 +704,7 @@ then
 fi
 
 # create a new VM
-qm create $VMID --name $NEWHOSTNAME --cores $CORES --onboot 1 --memory $MEMORY --agent 1,fstrim_cloned_disks=1
+qm create $VMID --name $NEWHOSTNAME --cores $CORES --onboot 1 --cpu $CPUTYPE --machine $VMTYPE --memory $MEMORY --agent 1,fstrim_cloned_disks=1
 
 if [[ $VLANYESORNO =~ ^[Yy]$ || $VLANYESORNO =~ ^[yY][eE][sS] ]]
 then
