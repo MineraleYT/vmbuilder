@@ -72,5 +72,9 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
 </ul>
 
 <h2 align="left">🔮 Aggiornamenti futuri</h2>
+    <li>👨🏻‍💻 Specifiche scelta processore</li>
+    <li>👨🏻‍💻 Fix bug scelta numero VM</li>
+    <li>👨🏻‍💻 Valutare l'introduzione del vIOMMU</li>
+    <li>👨🏻‍💻 Installazione automatica virtIO RNG su VM Red Hat</li>
     <li>👨🏻‍💻 Pacchetti aggiuntivi</li>
     <li>👨🏻‍💻 Traduzione script</li>
