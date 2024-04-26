@@ -379,6 +379,7 @@ do
     [yY][eE][sS]|[yY])
  echo
  read -p "Enter the display type for VM $VMID (std, vmware, virtio-gl, qxl, serial terminal 0-3): " DISPLAYTYPE
+ break
  ;;
      [nN][oO]|[nN])
  DISPLAYTYPE="std"
