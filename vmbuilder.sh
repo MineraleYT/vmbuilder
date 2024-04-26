@@ -369,6 +369,28 @@ do
 done
 echo
 
+# Impostazioni scheda video macchina virtuale
+while true
+do
+ echo "The default display type is set to serial terminal 0"
+ read -r -p "Would you like to change the display type (Enter Y/n)? " displaytypeyesorno
+
+ case $displaytypeyesorno in
+    [yY][eE][sS]|[yY])
+ echo
+ read -p "Enter the display type for VM $VMID (std, vmware, virtio-gl, qxl, serial terminal 0-3): " DISPLAYTYPE
+ ;;
+     [nN][oO]|[nN])
+ DISPLAYTYPE="std"
+ break
+        ;;
+     *)
+ echo "Invalid input, please enter Y/n or Yes/no"
+ ;;
+ esac
+done
+echo
+
 # This block is see if they want to add a key to the VM
 # and then it checks the path to it and checks to make sure it exists
 echo
@@ -742,7 +764,7 @@ qm set $VMID --ide2 $vmstorage:cloudinit
 # make it boot hard drive only
 qm set $VMID --boot c --bootdisk scsi0
 
-qm set $VMID --serial0 socket --vga serial0
+qm set $VMID --serial0 socket --vga DISPLAYTYPE
 
 #Here we are going to set the network stuff from above
 if [[ $DHCPYESORNO =~ ^[Yy]$ || $DHCPYESORNO =~ ^[yY][eE][sS] ]]
