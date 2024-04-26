@@ -590,7 +590,7 @@ echo
 echo
 echo "Please select the cloud image you would like to use"
 PS3='Select an option and press Enter: '
-options=("Ubuntu Noble 24.04 Cloud Image" "Ubuntu Jammy 22.04 Cloud Image" "Ubuntu Mantic 23.10 Cloud Image" "Ubuntu Focal 20.04 Cloud Image" "Arch Linux Cloud Image" "AlmaLinux 9.3 Cloud Image" "CentOS 7 Cloud Image" "Debian 12 Cloud Image" "Debian 11 Cloud Image" "Fedora 39 Cloud Image" "Fedora 38 Cloud Image" "Rocky Linux 9.3 Cloud Image")
+options=("Ubuntu Noble 24.04 Cloud Image" "Ubuntu Jammy 22.04 Cloud Image" "Ubuntu Mantic 23.10 Cloud Image" "Ubuntu Focal 20.04 Cloud Image" "Arch Linux Cloud Image" "AlmaLinux 9.3 Cloud Image" "CentOS 7 Cloud Image" "Debian 12 Cloud Image" "Debian 11 Cloud Image" "Fedora 40 Cloud Image" "Fedora 39 Cloud Image" "Fedora 38 Cloud Image" "Rocky Linux 9.3 Cloud Image")
 select osopt in "${options[@]}"
 do
   case $osopt in
@@ -611,6 +611,9 @@ do
           ;;
         "AlmaLinux 9.3 Cloud Image")
           [ -f "$isostorage/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://repo.almalinux.org/almalinux/9.3/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2 -P $isostorage && break
+          ;;
+        "Fedora 40 Cloud Image")
+          [ -f "$isostorage/Fedora-Server-KVM-40-1.14.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://mirror.init7.net/fedora/fedora/linux/releases/40/Server/x86_64/images/Fedora-Server-KVM-40-1.14.x86_64.qcow2 -P $isostorage && break
           ;;
         "Fedora 39 Cloud Image")
           [ -f "$isostorage/Fedora-Server-KVM-39-1.5.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://mirror.init7.net/fedora/fedora/linux/releases/39/Server/x86_64/images/Fedora-Server-KVM-39-1.5.x86_64.qcow2 -P $isostorage && break
