@@ -382,7 +382,7 @@ do
  break
  ;;
      [nN][oO]|[nN])
- DISPLAYTYPE="std"
+ DISPLAYTYPE="serial0"
  break
         ;;
      *)
