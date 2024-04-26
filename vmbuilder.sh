@@ -378,7 +378,7 @@ do
  case $displaytypeyesorno in
     [yY][eE][sS]|[yY])
  echo
- read -p "Enter the display type for VM $VMID (std, vmware, virtio-gl, qxl, serial terminal 0-3): " DISPLAYTYPE
+ read -p "Enter the display type for VM $VMID (std, vmware, virtio-gl, qxl, serial terminal 0-3, virtio): " DISPLAYTYPE
  break
  ;;
      [nN][oO]|[nN])
@@ -765,7 +765,7 @@ qm set $VMID --ide2 $vmstorage:cloudinit
 # make it boot hard drive only
 qm set $VMID --boot c --bootdisk scsi0
 
-qm set $VMID --serial0 socket --vga DISPLAYTYPE
+qm set $VMID --serial0 socket --vga $DISPLAYTYPE
 
 #Here we are going to set the network stuff from above
 if [[ $DHCPYESORNO =~ ^[Yy]$ || $DHCPYESORNO =~ ^[yY][eE][sS] ]]
