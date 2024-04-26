@@ -378,7 +378,7 @@ do
  case $displaytypeyesorno in
     [yY][eE][sS]|[yY])
  echo
- read -p "Enter the display type for VM $VMID (std, vmware, virtio-gl, qxl, serial0-3, virtio): " DISPLAYTYPE
+ read -p "Enter the display type for VM $VMID (std, vmware, virtio-gl, qxl, serial0, virtio): " DISPLAYTYPE
  break
  ;;
      [nN][oO]|[nN])
