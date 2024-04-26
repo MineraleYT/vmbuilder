@@ -39,6 +39,7 @@ Questo script può essere utilizzato dai principianti che non conoscono ancora m
   <li>Debian 12 - EOL Jun 2026</li>
   <li>Debian 11 - EOL Jul 2024</li>
   <li>Arch Linux</li>
+  <li>Fedora 40 - EOL May 2025</li>
   <li>Fedora 39 - EOL Dec 2024</li>
   <li>Fedora 38 - EOL May 2024</li>
   <li>Rocky Linux 9.3 - EOL May 2027</li>
