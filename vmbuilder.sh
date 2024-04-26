@@ -711,7 +711,7 @@ then
 fi
 
 # create a new VM
-qm create $VMID --name $NEWHOSTNAME --cores $CORES --onboot 1 --memory $MEMORY --agent 1,fstrim_cloned_disks=1
+qm create $VMID --name $NEWHOSTNAME --cores $CORES --onboot 1 --cpu $CPUTYPE --machine $VMTYPE --memory $MEMORY --agent 1,fstrim_cloned_disks=1
 
 if [[ $VLANYESORNO =~ ^[Yy]$ || $VLANYESORNO =~ ^[yY][eE][sS] ]]
 then
