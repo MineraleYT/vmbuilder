@@ -346,17 +346,20 @@ echo
 # Default cpu type kvm and vm type i440fx
 while true
 do
- echo "The default CPU type is set to kvm64"
- read -r -p "Would you like to change the cpu type (Enter Y/n)? " cputypeyorno
+ echo "The default CPU type is set to kvm64 and the machine type is set to i440fx"
+ read -r -p "Would you like to change the cpu and vm type (Enter Y/n)? " cputypeyorno
 
  case $cputypeyorno in
     [yY][eE][sS]|[yY])
  echo
  read -p "Enter the cpu type for VM $VMID: " CPUTYPE
+ echo
+ read -p "Enter the vm type for VM $VMID (pc or q35): " VMTYPE
  break
  ;;
      [nN][oO]|[nN])
  CPUTYPE="kvm64"
+ VMTYPE="pc"
  break
         ;;
      *)
@@ -484,52 +487,6 @@ do
  esac
 done
 
-# while true
-# do
-#  read -r -p "Do you want install additional packages? (Enter Y/n)? " packyesorno
-# 
-#  case $packyesorno in
-#      [yY][eE][sS]|[yY])
-#  echo
-#  PACKALLOW=y
-#  printf %s "Write the packages you want: "
-#  read -r packsel
-#  break
-#  ;;
-#      [nN][oO]|[nN])
-#  PACKALLOW=n
-#  echo
-#  break
-#         ;;
-#      *)
-#  echo "Invalid input, please enter Y/N or yes/no"
-#  ;;
-#  esac
-# done
-# echo
-
-
-#while true
-#do
-# read -r -p "Do you want the VM to autostart after you create it here? (Enter Y/n)? " AUTOSTARTS
-#
-# case $AUTOSTARTS in
-#     [yY][eE][sS]|[yY])
-# echo
-# AUTOSTART=yes
-# break
-# ;;
-#     [nN][oO]|[nN])
-#AUTOSTART=no
-# echo
-# break
-#        ;;
-#     *)
-# echo "Invalid input, please enter Y/N or yes/no"
-# ;;
-# esac
-#done
-
 echo
 # This block of code is for picking which node to have the VM on.
 # Couple things it creates the VM on the current node, then migrate's
@@ -543,7 +500,6 @@ echo "   BUT "
 echo "   It will start on the proxmox node you are on and then it will use "
 echo "   qm migrate to the target node (JUST FYI) "
 echo
-
 
 if [ -f "/etc/pve/corosync.conf" ];
 then
@@ -719,10 +675,6 @@ echo "users:" >> $snippetstorage$VMID.yaml
 echo "  - default" >> $snippetstorage$VMID.yaml
 echo "package_upgrade: true" >> $snippetstorage$VMID.yaml
 echo "packages:" >> $snippetstorage$VMID.yaml
-# if [[ $PACKALLOW =~ ^[Yy]$ || $PACKALLOW =~ ^[yY][eE][sS] ]]
-# then
-#     echo " - $packsel" >> $snippetstorage$VMID.yaml
-# fi
 if [[ $QEMUGUESTAGENT =~ ^[Yy]$ || $QEMUGUESTAGENT =~ ^[yY][eE][sS] ]]
 then
     echo " - qemu-guest-agent" >> $snippetstorage$VMID.yaml
@@ -731,7 +683,7 @@ then
 fi
 
 # create a new VM
-qm create $VMID --name $NEWHOSTNAME --cores $CORES --onboot 1 --cpu $CPUTYPE --memory $MEMORY --agent 1,fstrim_cloned_disks=1
+qm create $VMID --name $NEWHOSTNAME --cores $CORES --onboot 1 --cpu $CPUTYPE --machine $VMTYPE --memory $MEMORY --agent 1,fstrim_cloned_disks=1
 
 if [[ $VLANYESORNO =~ ^[Yy]$ || $VLANYESORNO =~ ^[yY][eE][sS] ]]
 then
