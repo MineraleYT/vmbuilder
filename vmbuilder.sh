@@ -346,20 +346,17 @@ echo
 # Default cpu type kvm and vm type i440fx
 while true
 do
- echo "The default CPU type is set to kvm and the default machine type is set to i440fx"
- read -r -p "Would you like to change the cpu and vm type (Enter Y/n)? " vmtypeyesorno
+ echo "The default CPU type is set to kvm64"
+ read -r -p "Would you like to change the cpu type (Enter Y/n)? " cputypeyorno
 
- case $vmtypeyesorno in
+ case $cputypeyorno in
     [yY][eE][sS]|[yY])
  echo
  read -p "Enter the cpu type for VM $VMID: " CPUTYPE
- echo
- read -p "Enter the vm type for VM $VMID (i440fx or q35): " VMTYPE
  break
  ;;
      [nN][oO]|[nN])
- CPUTYPE="kvm"
- VMTYPE="i440fx"
+ CPUTYPE="kvm64"
  break
         ;;
      *)
@@ -734,7 +731,7 @@ then
 fi
 
 # create a new VM
-qm create $VMID --name $NEWHOSTNAME --cores $CORES --onboot 1 --cpu $CPUTYPE --machine $VMTYPE --memory $MEMORY --agent 1,fstrim_cloned_disks=1
+qm create $VMID --name $NEWHOSTNAME --cores $CORES --onboot 1 --cpu $CPUTYPE --memory $MEMORY --agent 1,fstrim_cloned_disks=1
 
 if [[ $VLANYESORNO =~ ^[Yy]$ || $VLANYESORNO =~ ^[yY][eE][sS] ]]
 then
