@@ -626,9 +626,6 @@ then
 elif [ "$osopt" == "AlmaLinux 9.3 Cloud Image" ];
 then
    cloudos=$isostorage'AlmaLinux-9-GenericCloud-latest.x86_64.qcow2'
-elif [ "$osopt" == "CentOS 7 Cloud Image" ];
-then
-   cloudos=$isostorage'CentOS-7-x86_64-GenericCloud.qcow2'
 elif [ "$osopt" == "Rocky Linux 9.3 Cloud Image" ];
 then
    cloudos=$isostorage'Rocky-9-GenericCloud.latest.x86_64.qcow2'
