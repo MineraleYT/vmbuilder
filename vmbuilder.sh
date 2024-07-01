@@ -594,9 +594,6 @@ do
         "Fedora 39 Cloud Image")
           [ -f "$isostorage/Fedora-Cloud-Base-39-1.5.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://mirror.init7.net/fedora/fedora/linux/releases/39/Cloud/x86_64/images/Fedora-Cloud-Base-39-1.5.x86_64.qcow2 -P $isostorage && break
           ;;
-        "Fedora 38 Cloud Image")
-          [ -f "$isostorage/Fedora-Cloud-Base-38-1.6.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://mirror.init7.net/fedora/fedora/linux/releases/38/Cloud/x86_64/images/Fedora-Cloud-Base-38-1.6.x86_64.qcow2 -P $isostorage && break
-          ;;
         "Rocky Linux 9.3 Cloud Image")
          [ -f "$isostorage/Rocky-9-GenericCloud.latest.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://download.rockylinux.org/pub/rocky/9.3/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2 -P $isostorage && break
           ;;
@@ -635,9 +632,6 @@ then
 elif [ "$osopt" == "Debian 11 Cloud Image" ];
 then
    cloudos=$isostorage'debian-11-generic-amd64.qcow2'
-elif [ "$osopt" == "Fedora 38 Cloud Image" ];
-then
-   cloudos=$isostorage'Fedora-Cloud-Base-38-1.6.x86_64.qcow2'
 elif [ "$osopt" == "Fedora 40 Cloud Image" ];
 then
    cloudos=$isostorage'Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2'
