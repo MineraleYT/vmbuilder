@@ -15,7 +15,7 @@ select_cloud_image() {
     if [ ! -d "$isostorage" ]; then
         echo "Error: ISO storage directory does not exist: $isostorage" >&2
         return 1
-    }
+    fi
     
     echo "Please select the cloud image you would like to use:"
     echo "------------------------------------------------"
@@ -26,7 +26,7 @@ select_cloud_image() {
     if [ $? -ne 0 ]; then
         echo "Error: Failed to list OS images" >&2
         return 1
-    }
+    fi
     eval "$os_map_result"
     
     # Get user selection
@@ -50,7 +50,7 @@ select_cloud_image() {
     if [ -z "$name" ] || [ -z "$filename" ] || [ -z "$url" ]; then
         echo "Error: Failed to get image details" >&2
         return 1
-    }
+    fi
     
     # Check if image exists, if not download it
     if [ ! -f "$isostorage/$filename" ]; then
@@ -79,7 +79,7 @@ configure_networking() {
     if [ -z "$vmid" ] || [ -z "$vmbrused" ]; then
         echo "Error: Missing required parameters for networking configuration" >&2
         return 1
-    }
+    fi
 
     local vlan=""
     local ip_config=""
@@ -137,7 +137,7 @@ configure_resources() {
     if [ -z "$vmid" ]; then
         echo "Error: VM ID not provided" >&2
         return 1
-    }
+    fi
 
     local cores=4
     local memory=2048
@@ -207,7 +207,7 @@ configure_cloudinit() {
     if [ -z "$vmid" ] || [ -z "$snippetstorage" ] || [ -z "$vm_hostname" ]; then
         echo "Error: Missing required parameters for cloud-init configuration" >&2
         return 1
-    }
+    fi
 
     local username=""
     local password=""

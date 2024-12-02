@@ -8,11 +8,6 @@ mkdir -p "${SCRIPT_DIR}/templates"
 mkdir -p "${SCRIPT_DIR}/modules"
 mkdir -p "${SCRIPT_DIR}/config"
 
-# Source required modules
-source "${SCRIPT_DIR}/modules/utils.sh"
-source "${SCRIPT_DIR}/modules/vm_functions.sh"
-source "${SCRIPT_DIR}/modules/template_functions.sh"
-
 # Function to check dependencies
 check_dependencies() {
     local deps=("wget" "openssl" "qm" "pvesh")
@@ -27,6 +22,15 @@ check_dependencies() {
     if [ ${#missing[@]} -ne 0 ]; then
         echo "Error: Missing required dependencies: ${missing[*]}" >&2
         return 1
+    fi
+
+    # Check for jq
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "Installing jq..."
+        if ! apt-get update && apt-get install -y jq; then
+            echo "Error: Failed to install jq" >&2
+            return 1
+        fi
     fi
 
     # Check for Proxmox specific files
@@ -53,14 +57,45 @@ check_config() {
         return 1
     fi
 
-    # Validate JSON syntax
-    if ! jq empty "$config_file" 2>/dev/null; then
+    # Validate JSON syntax with detailed error message
+    local json_error
+    if ! json_error=$(jq '.' "$config_file" 2>&1 >/dev/null); then
         echo "Error: Invalid JSON in configuration file" >&2
+        echo "Details: $json_error" >&2
+        return 1
+    fi
+
+    # Validate required structure
+    if ! jq -e 'type == "object" and length > 0' "$config_file" >/dev/null 2>&1; then
+        echo "Error: Invalid configuration structure. Must be a non-empty object." >&2
+        return 1
+    fi
+
+    # Check if all required fields are present
+    local missing_fields=()
+    while IFS= read -r os_type; do
+        while IFS= read -r version; do
+            for field in "name" "version" "filename" "url" "type"; do
+                if ! jq -e ".\"$os_type\".\"$version\".\"$field\"" "$config_file" >/dev/null 2>&1; then
+                    missing_fields+=("$os_type.$version.$field")
+                fi
+            done
+        done < <(jq -r ".\"$os_type\" | keys[]" "$config_file")
+    done < <(jq -r 'keys[]' "$config_file")
+
+    if [ ${#missing_fields[@]} -ne 0 ]; then
+        echo "Error: Missing required fields in configuration:" >&2
+        printf '%s\n' "${missing_fields[@]}" >&2
         return 1
     fi
 
     return 0
 }
+
+# Source required modules
+source "${SCRIPT_DIR}/modules/utils.sh"
+source "${SCRIPT_DIR}/modules/vm_functions.sh"
+source "${SCRIPT_DIR}/modules/template_functions.sh"
 
 # Main menu function
 show_main_menu() {

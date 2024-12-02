@@ -33,7 +33,7 @@ parse_json() {
     if [ ! -f "$json_file" ]; then
         echo "Error: JSON file not found: $json_file" >&2
         return 1
-    }
+    fi
 
     # Check if jq is installed
     if ! command -v jq &> /dev/null; then
@@ -63,7 +63,7 @@ list_os_images() {
     if [ ! -f "$json_file" ]; then
         echo "Error: OS images configuration file not found" >&2
         return 1
-    }
+    fi
 
     local count=1
     declare -A os_map
@@ -98,7 +98,7 @@ get_os_image_details() {
     if [ -z "$os_type" ] || [ -z "$version" ] || [ -z "$field" ]; then
         echo "Error: Missing required parameters for get_os_image_details" >&2
         return 1
-    }
+    fi
 
     parse_json "$json_file" ".${os_type}.\"${version}\".${field}"
 }
