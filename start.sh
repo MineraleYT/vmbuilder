@@ -8,6 +8,25 @@ mkdir -p "${SCRIPT_DIR}/templates"
 mkdir -p "${SCRIPT_DIR}/modules"
 mkdir -p "${SCRIPT_DIR}/config"
 
+# Function to install jq
+install_jq() {
+    echo "Installing jq..."
+    if ! apt-get update >/dev/null; then
+        echo "Error: Failed to update package list" >&2
+        return 1
+    fi
+    if ! apt-get install -y jq >/dev/null; then
+        echo "Error: Failed to install jq" >&2
+        return 1
+    fi
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "Error: jq installation failed" >&2
+        return 1
+    fi
+    echo "jq installed successfully"
+    return 0
+}
+
 # Function to check dependencies
 check_dependencies() {
     local deps=("wget" "openssl" "qm" "pvesh")
@@ -24,15 +43,6 @@ check_dependencies() {
         return 1
     fi
 
-    # Check for jq
-    if ! command -v jq >/dev/null 2>&1; then
-        echo "Installing jq..."
-        if ! apt-get update && apt-get install -y jq; then
-            echo "Error: Failed to install jq" >&2
-            return 1
-        fi
-    fi
-
     # Check for Proxmox specific files
     if [ ! -f "/usr/bin/pvesh" ]; then
         echo "Error: This script must be run on a Proxmox VE server" >&2
@@ -43,6 +53,13 @@ check_dependencies() {
     if [ ! -f "/etc/pve/storage.cfg" ]; then
         echo "Error: Proxmox storage configuration not found" >&2
         return 1
+    fi
+
+    # Install jq if not present
+    if ! command -v jq >/dev/null 2>&1; then
+        if ! install_jq; then
+            return 1
+        fi
     fi
 
     return 0
@@ -57,9 +74,15 @@ check_config() {
         return 1
     fi
 
+    # Verify jq is available
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "Error: jq is required but not installed" >&2
+        return 1
+    fi
+
     # Validate JSON syntax with detailed error message
     local json_error
-    if ! json_error=$(jq '.' "$config_file" 2>&1 >/dev/null); then
+    if ! json_error=$(jq '.' "$config_file" 2>&1); then
         echo "Error: Invalid JSON in configuration file" >&2
         echo "Details: $json_error" >&2
         return 1
@@ -92,10 +115,26 @@ check_config() {
     return 0
 }
 
+# Check if running as root
+if [ "$(id -u)" != "0" ]; then
+    echo "Error: This script must be run as root" >&2
+    exit 1
+fi
+
+# Perform initial checks
+if ! check_dependencies; then
+    exit 1
+fi
+
 # Source required modules
 source "${SCRIPT_DIR}/modules/utils.sh"
 source "${SCRIPT_DIR}/modules/vm_functions.sh"
 source "${SCRIPT_DIR}/modules/template_functions.sh"
+
+# Check configuration
+if ! check_config; then
+    exit 1
+fi
 
 # Main menu function
 show_main_menu() {
@@ -153,21 +192,6 @@ show_main_menu() {
         esac
     done
 }
-
-# Check if running as root
-if [ "$(id -u)" != "0" ]; then
-    echo "Error: This script must be run as root" >&2
-    exit 1
-fi
-
-# Perform initial checks
-if ! check_dependencies; then
-    exit 1
-fi
-
-if ! check_config; then
-    exit 1
-fi
 
 # Start the script
 show_main_menu
