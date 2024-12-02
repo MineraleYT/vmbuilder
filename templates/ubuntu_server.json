@@ -1,0 +1,67 @@
+{
+    "template_name": "Ubuntu Server Template",
+    "description": "Base template for Ubuntu server deployments",
+    "os": {
+        "type": "ubuntu",
+        "version": "22.04",
+        "variant": "jammy"
+    },
+    "resources": {
+        "cores": 2,
+        "memory": 2048,
+        "disk": 32,
+        "disk_format": "qcow2"
+    },
+    "network": {
+        "type": "virtio",
+        "bridge": "vmbr0",
+        "firewall": true,
+        "dhcp": true
+    },
+    "features": {
+        "qemu_agent": true,
+        "cloud_init": true,
+        "nested_virtualization": false
+    },
+    "cloud_init": {
+        "user": "ubuntu",
+        "ssh_key": true,
+        "password_auth": false,
+        "packages": [
+            "qemu-guest-agent",
+            "curl",
+            "wget",
+            "vim",
+            "net-tools",
+            "htop"
+        ],
+        "updates": {
+            "package_update": true,
+            "package_upgrade": true
+        }
+    },
+    "options": {
+        "onboot": true,
+        "protection": true,
+        "template_version": "1.0",
+        "keyboard": "en-us",
+        "start_at_boot": true
+    },
+    "scripts": {
+        "pre_create": [
+            "apt-get update",
+            "apt-get upgrade -y"
+        ],
+        "post_create": [
+            "systemctl enable qemu-guest-agent",
+            "systemctl start qemu-guest-agent"
+        ]
+    },
+    "notes": "Base template for Ubuntu server deployments. Includes common tools and security best practices.",
+    "tags": [
+        "ubuntu",
+        "server",
+        "base",
+        "cloud-init"
+    ]
+}

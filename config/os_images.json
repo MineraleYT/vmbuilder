@@ -1,0 +1,91 @@
+{
+    "ubuntu": {
+        "noble": {
+            "name": "Ubuntu Noble 24.04 Cloud Image",
+            "version": "24.04",
+            "filename": "noble-server-cloudimg-amd64.img",
+            "url": "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img",
+            "type": "ubuntu"
+        },
+        "mantic": {
+            "name": "Ubuntu Mantic 23.10 Cloud Image",
+            "version": "23.10",
+            "filename": "mantic-server-cloudimg-amd64-disk-kvm.img",
+            "url": "https://cloud-images.ubuntu.com/mantic/current/mantic-server-cloudimg-amd64.img",
+            "type": "ubuntu"
+        },
+        "jammy": {
+            "name": "Ubuntu Jammy 22.04 Cloud Image",
+            "version": "22.04",
+            "filename": "jammy-server-cloudimg-amd64-disk-kvm.img",
+            "url": "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img",
+            "type": "ubuntu"
+        },
+        "focal": {
+            "name": "Ubuntu Focal 20.04 Cloud Image",
+            "version": "20.04",
+            "filename": "focal-server-cloudimg-amd64-disk-kvm.img",
+            "url": "https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64-disk-kvm.img",
+            "type": "ubuntu"
+        }
+    },
+    "debian": {
+        "bookworm": {
+            "name": "Debian 12 Cloud Image",
+            "version": "12",
+            "filename": "debian-12-generic-amd64.qcow2",
+            "url": "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2",
+            "type": "debian"
+        },
+        "bullseye": {
+            "name": "Debian 11 Cloud Image",
+            "version": "11",
+            "filename": "debian-11-generic-amd64.qcow2",
+            "url": "https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2",
+            "type": "debian"
+        }
+    },
+    "fedora": {
+        "40": {
+            "name": "Fedora 40 Cloud Image",
+            "version": "40",
+            "filename": "Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2",
+            "url": "https://mirror.init7.net/fedora/fedora/linux/releases/40/Cloud/x86_64/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2",
+            "type": "fedora"
+        },
+        "39": {
+            "name": "Fedora 39 Cloud Image",
+            "version": "39",
+            "filename": "Fedora-Cloud-Base-39-1.5.x86_64.qcow2",
+            "url": "https://mirror.init7.net/fedora/fedora/linux/releases/39/Cloud/x86_64/images/Fedora-Cloud-Base-39-1.5.x86_64.qcow2",
+            "type": "fedora"
+        }
+    },
+    "rocky": {
+        "9.3": {
+            "name": "Rocky Linux 9.3 Cloud Image",
+            "version": "9.3",
+            "filename": "Rocky-9-GenericCloud.latest.x86_64.qcow2",
+            "url": "https://download.rockylinux.org/pub/rocky/9.3/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2",
+            "type": "rocky"
+        }
+    },
+    "almalinux": {
+        "9.3": {
+            "name": "AlmaLinux 9.3 Cloud Image",
+            "version": "9.3",
+            "filename": "AlmaLinux-9-GenericCloud-latest.x86_64.qcow2",
+            "url": "https://repo.almalinux.org/almalinux/9.3/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2",
+            "type": "almalinux"
+        }
+    },
+    "arch": {
+        "latest": {
+            "name": "Arch Linux Cloud Image",
+            "version": "latest",
+            "filename": "Arch-Linux-x86_64-cloudimg.qcow2",
+            "url": "https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2",
+            "type": "arch"
+        }
+    }
+}
