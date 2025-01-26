@@ -4,16 +4,18 @@
 
 ###############################################################################
 # Proxmox VM Builder
-# Author: Originally by Francis Munch, maintained by MinerAle00
+# Author: Originally by Francis Munch, maintained by Mineraleyt
 # Description: Automated VM creation script using cloud images for Proxmox
 ###############################################################################
 
 set -euo pipefail
 
 # Constants
-readonly GITHUB_REPO="MinerAle00/vmbuilder"
+readonly GITHUB_REPO="mineraleyt/vmbuilder"
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_PATH="$(readlink -f "$0")"
+readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+readonly CLOUD_IMAGES_FILE="$SCRIPT_DIR/cloud_images.json"
 readonly MIN_DISK_SIZE=1
 readonly MAX_DISK_SIZE=2048
 readonly DEFAULT_CORES=4
@@ -21,22 +23,6 @@ readonly DEFAULT_MEMORY=2048
 readonly DEFAULT_CPU_TYPE="kvm64"
 readonly DEFAULT_VM_TYPE="pc"
 readonly DEFAULT_DISPLAY="serial0"
-
-# Initialize cloud images array
-declare -A CLOUD_IMAGES
-CLOUD_IMAGES=(
-    ["Ubuntu 24.04"]="https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
-    ["Ubuntu 23.10"]="https://cloud-images.ubuntu.com/mantic/current/mantic-server-cloudimg-amd64.img"
-    ["Ubuntu 22.04"]="https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img"
-    ["Ubuntu 20.04"]="https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64-disk-kvm.img"
-    ["Debian 12"]="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
-    ["Debian 11"]="https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2"
-    ["Rocky Linux 9.3"]="https://download.rockylinux.org/pub/rocky/9.3/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2"
-    ["AlmaLinux 9.3"]="https://repo.almalinux.org/almalinux/9.3/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2"
-    ["Arch Linux"]="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
-    ["Fedora 40"]="https://mirror.init7.net/fedora/fedora/linux/releases/40/Cloud/x86_64/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2"
-    ["Fedora 39"]="https://mirror.init7.net/fedora/fedora/linux/releases/39/Cloud/x86_64/images/Fedora-Cloud-Base-39-1.5.x86_64.qcow2"
-)
 
 # Color codes for output
 readonly RED='\033[0;31m'
@@ -62,6 +48,64 @@ info() {
     echo "Info: $1"
 }
 
+# Load cloud images
+load_cloud_images() {
+    [[ -f "$CLOUD_IMAGES_FILE" ]] || error_exit "Cloud images file not found: $CLOUD_IMAGES_FILE"
+    
+    # Check if jq is available
+    if command -v jq >/dev/null 2>&1; then
+        if ! jq empty "$CLOUD_IMAGES_FILE" 2>/dev/null; then
+            error_exit "Invalid JSON in cloud images file"
+        fi
+    else
+        warning "jq not found. Basic JSON validation only."
+        # Basic check for valid JSON
+        if ! grep -q '^{' "$CLOUD_IMAGES_FILE"; then
+            error_exit "Invalid JSON in cloud images file"
+        fi
+    fi
+}
+
+# Select cloud image
+select_cloud_image() {
+    load_cloud_images
+    
+    # Check if jq is available for better JSON parsing
+    if command -v jq >/dev/null 2>&1; then
+        # Use jq to get formatted list of images
+        echo "Available operating systems:"
+        echo
+        
+        # Create array of OS choices
+        mapfile -t os_list < <(jq -r '.images[] | "\(.os) \(.version) (\(.codename // ""))"' "$CLOUD_IMAGES_FILE" | sed 's/  / /g' | sed 's/ ()//g')
+        
+        PS3="Select an operating system (enter number): "
+        select os in "${os_list[@]}"; do
+            if [[ -n "$os" ]]; then
+                # Get the URL for selected OS
+                local os_name version
+                read -r os_name version _ <<< "$os"
+                image_url=$(jq -r --arg os "$os_name" --arg ver "$version" '.images[] | select(.os == $os and .version == $ver) | .url' "$CLOUD_IMAGES_FILE")
+                break
+            else
+                warning "Invalid selection. Please try again."
+            fi
+        done
+    else
+        # Fallback to basic parsing if jq is not available
+        warning "jq not installed. Using basic selection method."
+        # Read the file line by line and extract OS information
+        while IFS= read -r line; do
+            if [[ $line =~ \"os\":\ *\"([^\"]+)\" ]]; then
+                os_name="${BASH_REMATCH[1]}"
+                echo "$os_name"
+            fi
+        done < "$CLOUD_IMAGES_FILE"
+    fi
+    
+    echo "$image_url"
+}
+
 # Check for script updates
 check_for_updates() {
     info "Checking for updates..."
@@ -77,7 +121,6 @@ check_for_updates() {
     if curl -sL "https://raw.githubusercontent.com/$GITHUB_REPO/main/vmbuilder.sh" -o "$temp_file"; then
         if ! cmp -s "$SCRIPT_PATH" "$temp_file"; then
             echo -e "${YELLOW}New updates available!${NC}"
-            echo
             read -r -p "Would you like to update now? [y/N] " response
             echo
             
@@ -109,8 +152,6 @@ check_for_updates() {
     rm -f "$temp_file"
 }
 
-[[ ! -f "$SCRIPT_PATH" ]] && error_exit "Cannot determine script location"
-
 # Display banner
 show_banner() {
     clear
@@ -123,8 +164,8 @@ show_banner() {
     echo "# Originally written by Francis Munch"
     echo "# github: https://github.com/francismunch/vmbuilder"
     echo "#"
-    echo "# Updated and maintained by MinerAle00"
-    echo "# github: https://github.com/MinerAle00/vmbuilder"
+    echo "# Updated and maintained by Mineraleyt"
+    echo "# github: https://github.com/mineraleyt/vmbuilder"
     echo "###"
     echo "#############################################################################################"
     echo
@@ -142,6 +183,11 @@ check_prerequisites() {
     for cmd in "${required_commands[@]}"; do
         command -v "$cmd" >/dev/null 2>&1 || error_exit "Required command not found: $cmd"
     done
+
+    # Recommend jq for better JSON handling
+    if ! command -v jq >/dev/null 2>&1; then
+        warning "jq is recommended for better JSON handling. Install with: apt install jq"
+    fi
 
     echo
     info "Taking a 5-7 seconds to gather information..."
@@ -164,24 +210,24 @@ get_vm_id() {
     local next_id vm_id
     next_id=$(pvesh get /cluster/nextid)
     
-    while true; do
-        read -r -p "Enter VM ID or press Enter for next available ($next_id): " vm_id
-        vm_id=${vm_id:-$next_id}
-        
-        # Check if ID is in use
-        if ! qm status "$vm_id" >/dev/null 2>&1; then
-            echo "The VM number will be $vm_id"
-            echo
-            echo "$vm_id"
-            break
-        fi
-        warning "VM ID $vm_id is already in use"
-    done
+    read -r -p "Enter VM ID or press Enter for next available ($next_id): " vm_id
+    vm_id=${vm_id:-$next_id}
+    
+    # Check if ID is in use
+    if ! qm status "$vm_id" >/dev/null 2>&1; then
+        echo
+        echo "The VM number will be $vm_id"
+        echo
+        printf "%s" "$vm_id"
+        return 0
+    else
+        error_exit "VM ID $vm_id is already in use"
+    fi
 }
 
 # Get user credentials
 get_user_credentials() {
-    local username password1 password2 hashed_password
+    local username password1 password2 hashed_password ssh_key ssh_auth="false"
     
     read -r -p "Enter desired VM username: " username
     
@@ -196,27 +242,22 @@ get_user_credentials() {
     
     hashed_password=$(openssl passwd -1 -salt SaltSalt "$password1")
     
-    # SSH key configuration
     read -r -p "Do you want to add an SSH key? [y/N] " response
     if [[ "$response" =~ ^[Yy] ]]; then
         while true; do
             read -r -p "Enter path to SSH public key: " key_path
             [[ -f "$key_path" ]] && { ssh_key=$(cat "$key_path"); break; }
-            warning "SSH key file not found. Please try again."
+            warning "File not found. Please try again."
         done
     fi
-
-    # SSH password authentication
+    
     read -r -p "Enable SSH password authentication? [y/N] " response
-    local ssh_password_auth="false"
-    if [[ "$response" =~ ^[Yy] ]]; then
-        ssh_password_auth="true"
-    fi
-
-    echo "username='$username' password='$hashed_password' ssh_key='${ssh_key:-}' ssh_password_auth='$ssh_password_auth'"
+    [[ "$response" =~ ^[Yy] ]] && ssh_auth="true"
+    
+    echo "username='$username' password='$hashed_password' ssh_key='${ssh_key:-}' ssh_auth='$ssh_auth'"
 }
 
-# Configure storage options
+# Configure storage
 configure_storage() {
     info "Configuring storage options..."
     
@@ -229,18 +270,17 @@ configure_storage() {
         if [[ -n "$storage" ]]; then
             echo "The storage you selected for the VM is $storage"
             echo
+            printf "%s" "$storage"
             break
         else
             warning "Invalid selection. Please try again."
         fi
     done
-    
-    echo "$storage"
 }
 
 # Configure VM resources
 configure_vm() {
-    local cores memory vm_id="$1" hostname="$2"
+    local cores memory vm_id="$1" hostname="$2" image_url="$3"
     
     read -r -p "CPU cores [$DEFAULT_CORES]: " cores
     read -r -p "Memory in MB [$DEFAULT_MEMORY]: " memory
@@ -250,6 +290,13 @@ configure_vm() {
     
     info "Creating VM $vm_id ($hostname)..."
     
+    # Download the cloud image
+    local image_file
+    image_file="/tmp/$(basename "$image_url")"
+    info "Downloading cloud image..."
+    wget -O "$image_file" "$image_url" || error_exit "Failed to download cloud image"
+    
+    # Create and configure VM
     qm create "$vm_id" \
         --name "$hostname" \
         --cores "$cores" \
@@ -257,7 +304,14 @@ configure_vm() {
         --net0 "virtio,bridge=vmbr0" \
         --bootdisk scsi0 \
         --onboot 1 \
-        --agent 1
+        --agent 1 || error_exit "Failed to create VM"
+    
+    # Import the disk
+    info "Importing disk..."
+    qm importdisk "$vm_id" "$image_file" "$storage" || error_exit "Failed to import disk"
+    
+    # Clean up
+    rm -f "$image_file"
 }
 
 # Main function
@@ -267,9 +321,10 @@ main() {
     check_prerequisites
     
     # Get basic VM configuration
-    local hostname vm_id
+    local hostname vm_id image_url
     hostname=$(get_hostname)
     vm_id=$(get_vm_id)
+    image_url=$(select_cloud_image)
     
     # Get user credentials
     eval "$(get_user_credentials)"
@@ -279,7 +334,7 @@ main() {
     storage=$(configure_storage)
     
     # Create VM
-    configure_vm "$vm_id" "$hostname"
+    configure_vm "$vm_id" "$hostname" "$image_url"
     
     success "VM $hostname ($vm_id) created successfully"
 }

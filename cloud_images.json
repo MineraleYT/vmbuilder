@@ -1,0 +1,87 @@
+{
+    "images": [
+        {
+            "os": "Ubuntu",
+            "version": "24.04",
+            "codename": "Noble",
+            "url": "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img",
+            "eol": "2029-06",
+            "type": "server"
+        },
+        {
+            "os": "Ubuntu",
+            "version": "23.10",
+            "codename": "Mantic",
+            "url": "https://cloud-images.ubuntu.com/mantic/current/mantic-server-cloudimg-amd64.img",
+            "eol": "2024-07",
+            "type": "server"
+        },
+        {
+            "os": "Ubuntu",
+            "version": "22.04",
+            "codename": "Jammy",
+            "url": "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img",
+            "eol": "2027-04",
+            "type": "server"
+        },
+        {
+            "os": "Ubuntu",
+            "version": "20.04",
+            "codename": "Focal",
+            "url": "https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64-disk-kvm.img",
+            "eol": "2025-04",
+            "type": "server"
+        },
+        {
+            "os": "Debian",
+            "version": "12",
+            "codename": "Bookworm",
+            "url": "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2",
+            "eol": "2026-06",
+            "type": "generic"
+        },
+        {
+            "os": "Debian",
+            "version": "11",
+            "codename": "Bullseye",
+            "url": "https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2",
+            "eol": "2024-07",
+            "type": "generic"
+        },
+        {
+            "os": "Rocky Linux",
+            "version": "9.3",
+            "url": "https://download.rockylinux.org/pub/rocky/9.3/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2",
+            "eol": "2027-05",
+            "type": "generic"
+        },
+        {
+            "os": "AlmaLinux",
+            "version": "9.3",
+            "url": "https://repo.almalinux.org/almalinux/9.3/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2",
+            "eol": "2027-05",
+            "type": "generic"
+        },
+        {
+            "os": "Arch Linux",
+            "version": "latest",
+            "url": "https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2",
+            "type": "generic",
+            "rolling": true
+        },
+        {
+            "os": "Fedora",
+            "version": "40",
+            "url": "https://mirror.init7.net/fedora/fedora/linux/releases/40/Cloud/x86_64/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2",
+            "eol": "2025-05",
+            "type": "generic"
+        },
+        {
+            "os": "Fedora",
+            "version": "39",
+            "url": "https://mirror.init7.net/fedora/fedora/linux/releases/39/Cloud/x86_64/images/Fedora-Cloud-Base-39-1.5.x86_64.qcow2",
+            "eol": "2024-12",
+            "type": "generic"
+        }
+    ]
+}
