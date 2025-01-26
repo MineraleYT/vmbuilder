@@ -17,6 +17,10 @@ Proxmox VM Builder is a sophisticated automation script that streamlines the pro
 
 Whether you're a Proxmox beginner or an experienced administrator, this script offers a streamlined approach to VM deployment while maintaining full control over the configuration options.
 
+## 🎥 Demo
+
+https://github.com/mineraleyt/vmbuilder/assets/66887063/d38db6bd-6409-4ab1-a605-c186cde6d696
+
 ## ✨ Key Features
 
 - **Quick Deployment**: Create and start VMs in under 3 minutes
