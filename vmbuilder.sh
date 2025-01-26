@@ -1,772 +1,265 @@
 #!/bin/bash
-clear
-echo "#############################################################################################"
-echo "###"
-echo "# Welcome to the Proxmox Virtual Machine Builder script that uses Cloud Images"
-echo "# This will automate so much and make it so easy to spin up a VM machine from a cloud image."
-echo "# A VM Machine typically will be spun up and ready in less then 3 minutes."
-echo "#"
-echo "# Originally written by Francis Munch"
-echo "# github: https://github.com/francismunch/vmbuilder"
-echo "#"
-echo "# Updated and maintained by MinerAle00"
-echo "# github: https://github.com/MinerAle00/vmbuilder"
-echo "###"
-echo "#############################################################################################"
-echo
-echo
-# Going to ask questions for VM number, hostname, vlan tag
-echo
-while true; do
-   read -r -p "Enter desired hostname for the Virtual Machine: " NEWHOSTNAME
-   if [[ ! $NEWHOSTNAME == *['!'@#\$%^\&*()\_+\']* ]];
-   then
-      break;
-   else
-      echo "Contains a character not allowed for a hostname, please try again"
-   fi
-done
-echo
-echo "*** Taking a 5-7 seconds to gather information ***"
-echo
-#Picking VM ID number
-vmidnext=$(pvesh get /cluster/nextid)
-declare -a vmidsavail=$(pvesh get /cluster/resources | awk '{print $2}' | sed '/storage/d' | sed '/node/d' | sed '/id/d' | sed '/./,/^$/!d' | cut -d '/' -f 2 | sed '/^$/d')
 
-#echo ${vmidsavail[@]}
+# shellcheck disable=SC2162
 
-for ((i=1;i<=99;i++));
-do
-   systemids+=$(echo " " $i)
-done
+###############################################################################
+# Proxmox VM Builder
+# Author: Originally by Francis Munch, maintained by MinerAle00
+# Description: Automated VM creation script using cloud images for Proxmox
+###############################################################################
 
-USEDIDS=("${vmidsavail[@]}" "${systemids[@]}")
-declare -a all=( echo ${USEDIDS[@]} )
+set -euo pipefail
 
-function get_vmidnumber() {
-    read -p "${1} New VM ID number: " number
-    if [[ " ${all[*]} " != *" ${number} "* ]]
-    then
-        VMID=${number:-$vmidnext}
-    else
-        get_vmidnumber 'Enter a different number because either you are using it or reserved by the sysem'
-    fi
+# Constants
+readonly VERSION="1.0.0"
+readonly SCRIPT_NAME="$(basename "$0")"
+readonly MIN_DISK_SIZE=1
+readonly MAX_DISK_SIZE=2048
+readonly DEFAULT_CORES=4
+readonly DEFAULT_MEMORY=2048
+readonly DEFAULT_CPU_TYPE="kvm64"
+readonly DEFAULT_VM_TYPE="pc"
+readonly DEFAULT_DISPLAY="serial0"
+
+# Color codes for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly NC='\033[0m' # No Color
+
+# Initialize cloud images array
+declare -A CLOUD_IMAGES
+CLOUD_IMAGES=(
+    ["Ubuntu 24.04"]="https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+    ["Ubuntu 23.10"]="https://cloud-images.ubuntu.com/mantic/current/mantic-server-cloudimg-amd64.img"
+    ["Ubuntu 22.04"]="https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img"
+    ["Ubuntu 20.04"]="https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64-disk-kvm.img"
+    ["Debian 12"]="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+    ["Debian 11"]="https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2"
+    ["Rocky Linux 9.3"]="https://download.rockylinux.org/pub/rocky/9.3/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2"
+    ["AlmaLinux 9.3"]="https://repo.almalinux.org/almalinux/9.3/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2"
+    ["Arch Linux"]="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
+    ["Fedora 40"]="https://mirror.init7.net/fedora/fedora/linux/releases/40/Cloud/x86_64/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2"
+    ["Fedora 39"]="https://mirror.init7.net/fedora/fedora/linux/releases/39/Cloud/x86_64/images/Fedora-Cloud-Base-39-1.5.x86_64.qcow2"
+)
+
+# Error handling functions
+error_exit() {
+    echo -e "${RED}Error: $1${NC}" >&2
+    exit 1
 }
-echo "Enter desired VM ID number or press enter to accept default of $vmidnext: "
-get_vmidnumber ''
 
-echo "The VM number will be $VMID"
+warning() {
+    echo -e "${YELLOW}Warning: $1${NC}" >&2
+}
 
-echo
-read -p "Enter desired VM username: " USER
-echo
-while true; do
-    read -s -p "Please enter password for the user: " PASSWORD
-    echo
-    read -s -p "Please repeat password for the user: " PASSWORD1
-    echo
-    [ "$PASSWORD" = "$PASSWORD1" ] && break
-    echo
-    echo "Please try again passwords did not match"
-    echo
-done
-echo
-# really just hashing the password so its not in plain text in the usercloud.yaml
-# that is being created during the process
-# really should do keys for most secure
-kindofsecure=$(openssl passwd -1 -salt SaltSalt $PASSWORD)
+success() {
+    echo -e "${GREEN}Success: $1${NC}"
+}
 
-## Selecting the Storage th VM will run on
-echo "Please select the storage the VM will run on?"
-storageavail=$(awk '{if(/:/) print $2}' /etc/pve/storage.cfg)
-typestorage=$(echo "${storageavail[@]}")
-declare -a allstorage=( ${typestorage[@]} )
-total_num_storage=${#allstorage[@]}
-allstorage2=$( echo ${allstorage[@]} )
+info() {
+    echo "Info: $1"
+}
 
-select option in $allstorage2; do
-if [ 1 -le "$REPLY" ] && [ "$REPLY" -le $total_num_storage ];
-then
-        vmstorage=$option
-        break;
-else
-        echo "Incorrect Input: Select a number 1-$total_num_storage"
-fi
-done
+# Display banner
+show_banner() {
+    clear
+    cat << "EOF"
+#############################################################################################
+###
+# Welcome to the Proxmox Virtual Machine Builder script that uses Cloud Images
+# This will automate so much and make it so easy to spin up a VM machine from a cloud image.
+# A VM Machine typically will be spun up and ready in less then 3 minutes.
+#
+# Originally written by Francis Munch
+# github: https://github.com/francismunch/vmbuilder
+#
+# Updated and maintained by MinerAle00
+# github: https://github.com/MinerAle00/vmbuilder
+###
+#############################################################################################
 
-echo
-echo "The storage you selected for the VM is $vmstorage"
+EOF
+}
 
-## Selecting the ISO Storage location
+# Check prerequisites
+check_prerequisites() {
+    info "Checking prerequisites..."
+    
+    [[ $EUID -eq 0 ]] || error_exit "This script must be run as root"
+    [[ -f "/etc/pve/storage.cfg" ]] || error_exit "This script must be run on a Proxmox VE host"
 
-echo
-echo "Please select ISO storage location"
-isostorageavail=$(awk '{if(/path/) print $2}' /etc/pve/storage.cfg)
-path=/template/iso/
-typeisostorage=$(echo "${isostorageavail[@]}")
-declare -a allisostorage=( ${typeisostorage[@]} )
-
-cnt=${#allisostorage[@]}
-for (( i=0;i<cnt;i++)); do
-    allisostorage[i]="${allisostorage[i]}$path"
-done
-total_num_storage_paths=${#allisostorage[@]}
-allisostorage2=$( echo ${allisostorage[@]} )
-
-select option in $allisostorage2; do
-if [ 1 -le "$REPLY" ] && [ "$REPLY" -le $total_num_storage_paths ];
-then
-#        echo "The selected option is $REPLY"
-#        echo "The selected storage is $option"
-        isostorage=$option
-        break;
-else
-        echo "Incorrect Input: Select a number 1-$total_num_storage_paths"
-fi
-done
-
-echo
-echo "The cloud image will be downloaded to " $isostorage " or look there if already downloaded"
-echo
-
-# user.yaml config location and storage for snippets
-echo "Please select the storage that has snippets available"
-echo "If you pick one that does not have it enabled the VM being created will not have all the"
-echo "user settings (user name, password , keys) so if you need to check in the GUI click on Datacenter"
-echo "then click on storage and see if enabled, if not you need to enable it on the storage you want it"
-echo "to be placed on.  There will be two questions for snippet setup. One for the actual locaiton to put the user.yaml and the"
-echo "second for the storage being used for snippets."
-echo
-snippetsstorageavail=$(awk '{if(/path/) print $2}' /etc/pve/storage.cfg)
-snippetspath=/snippets/
-
-declare -a allsnippetstorage=( ${snippetsstorageavail[@]} )
-
-cnt=${#allsnippetstorage[@]}
-for (( i=0;i<cnt;i++)); do
-    allsnippetstorage[i]="${allsnippetstorage[i]}$snippetspath"
-done
-
-total_num_snippet_paths=${#allsnippetstorage[@]}
-allsnippetstorage2=$( echo ${allsnippetstorage[@]} )
-
-select option in $allsnippetstorage2; do
-if [ 1 -le "$REPLY" ] && [ "$REPLY" -le $total_num_snippet_paths ];
-then
-        snippetstorage=$option
-        break;
-else
-        echo "Incorrect Input: Select a number 1-$total_num_snippet_paths"
-fi
-done
-
-echo
-echo "The snippet storage location will be " $snippetstorage "here, which will hold the user data yaml file for each VM"
-echo
-echo "Now that we have selected the snippet storage path ($snippetstorage) we need to actually select the storage that this path is on."
-echo "Make sure the path picked and the storage picked are one in the same or it will fail."
-echo "example /var/lib/vz/snippets/ is "local" storage"
-echo
-echo "Please select the storage the snippets will be on"
-storageavailsnip=$(awk '{if(/:/) print $2}' /etc/pve/storage.cfg)
-typestoragesnip=$(echo "${storageavailsnip[@]}")
-declare -a allstoragesnip=( ${typestoragesnip[@]} )
-total_num_snippet_storages=${#allstoragesnip[@]}
-allstoragesnip2=$( echo ${allstoragesnip[@]} )
-
-select option in $allstoragesnip2; do
-if [ 1 -le "$REPLY" ] && [ "$REPLY" -le $total_num_snippet_storages ];
-then
-        snipstorage=$option
-        break;
-else
-        echo "Incorrect Input: Select a number 1-$total_num_storage"
-fi
-done
-
-echo
-echo "The snippet storage path of the user.yaml file will be" $snippetstorage
-echo "The storage for snippets being used is" $snipstorage
-echo
-
-#Checking to see what VMBR interface you want to use
-echo
-echo "Please select VMBR to use for your network"
-declare -a vmbrs=$(awk '{if(/vmbr/) print $2}' /etc/network/interfaces)
-declare -a vmbrsavail=( $(printf "%s\n" "${vmbrs[@]}" | sort -u) )
-
-cnt=${#vmbrsavail[@]}
-for (( i=0;i<cnt;i++)); do
-    vmbrsavail[i]="${vmbrsavail[i]}"
-done
-total_num_vmbrs=${#vmbrsavail[@]}
-vmbrsavail2=$( echo ${vmbrsavail[@]} )
-
-select option in $vmbrsavail2; do
-if [ 1 -le "$REPLY" ] && [ "$REPLY" -le $total_num_vmbrs ];
-then
-#        echo "The selected option is $REPLY"
-#        echo "The selected storage is $option"
-        vmbrused=$option
-        break;
-else
-        echo "Incorrect Input: Select a number 1-$total_num_vmbrs"
-fi
-done
-
-echo "Your network bridge will be on " $vmbrused
-echo
-echo
-
-#VLAN information block
-while true
-do
- read -r -p "Do you need to enter a VLAN number? [Y/n] " VLANYESORNO
-
- case $VLANYESORNO in
-     [yY][eE][sS]|[yY])
- echo
- while true
- do
-  read -p "Enter desired VLAN number for the VM: " VLAN
-  if [[ $VLAN -ge 0 ]] && [[ $VLAN -le 4096 ]]
-  then
-     break
-  fi
- done
- echo
- break
- ;;
-     [nN][oO]|[nN])
- echo
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/N or yes/no"
- ;;
- esac
-done
-
-# Setting DCHP or a Static IP
-echo
-while true
-do
- read -p "Enter Yes/Y to use DHCP for IP or Enter No/N to set a static IP address: " DHCPYESORNO
-
- case $DHCPYESORNO in
-     [yY][eE][sS]|[yY])
- break
- ;;
-     [nN][oO]|[nN])
-    while true; do
-        echo
-        read -p "Enter IP address to use (format example 192.168.1.50/24): " IPADDRESS
-        echo
-        read -p "Please repeat IP address to use (format example 192.168.1.50/24): " IPADDRESS2
-        echo
-        [ "$IPADDRESS" = "$IPADDRESS2" ] && break
-        echo
-        echo "Please try again IP addresses did not match"
-        echo
+    local required_commands=("pvesh" "qm" "wget" "openssl")
+    for cmd in "${required_commands[@]}"; do
+        command -v "$cmd" >/dev/null 2>&1 || error_exit "Required command not found: $cmd"
     done
+}
+
+# Get valid hostname
+get_hostname() {
+    local hostname
     while true; do
-        read -p "Enter gateway IP address to use (format example 192.168.1.1): " GATEWAY
-        echo
-        read -p "Please repeate gateway IP address to use (format example 192.168.1.1): " GATEWAY2
-        echo
-        [ "$GATEWAY" = "$GATEWAY2" ] && break
-        echo
-        echo "Please try again gateway IP addresses did not match"
-        echo
+        read -r -p "Enter desired hostname for the Virtual Machine: " hostname
+        [[ "$hostname" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]] && break
+        warning "Invalid hostname. Use only letters, numbers, and hyphens (not at start/end)"
     done
-    echo
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/n or yes/no"
- ;;
- esac
-done
-echo
+    echo "$hostname"
+}
 
+# Get VM ID
+get_vm_id() {
+    local next_id vm_id
+    next_id=$(pvesh get /cluster/nextid)
+    
+    while true; do
+        read -r -p "Enter VM ID or press Enter for next available ($next_id): " vm_id
+        vm_id=${vm_id:-$next_id}
+        
+        # Check if ID is in use
+        if ! qm status "$vm_id" >/dev/null 2>&1; then
+            echo "$vm_id"
+            break
+        fi
+        warning "VM ID $vm_id is already in use"
+    done
+}
 
-## This next section is asking if you need to resize the root disk so its jsut not the base size from the cloud image
-while true
-do
- read -r -p "Would you like to resize the base cloud image disk (Enter Y/N?) " RESIZEDISK
+# Get user credentials
+get_user_credentials() {
+    local username password1 password2 hashed_password ssh_key ssh_auth="false"
+    
+    read -r -p "Enter username: " username
+    
+    while true; do
+        read -r -s -p "Enter password: " password1; echo
+        read -r -s -p "Confirm password: " password2; echo
+        
+        [ "$password1" = "$password2" ] && break
+        warning "Passwords do not match"
+    done
+    
+    hashed_password=$(openssl passwd -1 -salt SaltSalt "$password1")
+    
+    read -r -p "Add SSH key? [y/N] " response
+    if [[ "$response" =~ ^[Yy] ]]; then
+        while true; do
+            read -r -p "Path to SSH public key: " key_path
+            [[ -f "$key_path" ]] && { ssh_key=$(cat "$key_path"); break; }
+            warning "File not found"
+        done
+    fi
+    
+    read -r -p "Enable SSH password authentication? [y/N] " response
+    [[ "$response" =~ ^[Yy] ]] && ssh_auth="true"
+    
+    echo "username='$username' password='$hashed_password' ssh_key='${ssh_key:-}' ssh_auth='$ssh_auth'"
+}
 
- case $RESIZEDISK in
-     [yY][eE][sS]|[yY])
- echo
- echo "Please enter in GB's (exampe 2 for adding 2GB to the resize) how much space you want to add: "
- echo
- read -p "Enter size in Gb's: " ADDDISKSIZE
- break
- ;;
-     [nN][oO]|[nN])
- RESIZEDISK=n
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/n or yes/no"
- ;;
- esac
-done
-echo
+# Configure VM resources
+configure_vm() {
+    local cores memory vm_id="$1" hostname="$2"
+    
+    read -r -p "CPU cores [$DEFAULT_CORES]: " cores
+    read -r -p "Memory in MB [$DEFAULT_MEMORY]: " memory
+    
+    cores=${cores:-$DEFAULT_CORES}
+    memory=${memory:-$DEFAULT_MEMORY}
+    
+    info "Creating VM $vm_id ($hostname)..."
+    
+    qm create "$vm_id" \
+        --name "$hostname" \
+        --cores "$cores" \
+        --memory "$memory" \
+        --net0 "virtio,bridge=vmbr0" \
+        --bootdisk scsi0 \
+        --onboot 1 \
+        --agent 1
+}
 
-# Asking if they want to change core ram and stuff other then some defaults I set
-# Default cores is 4 and memory is 2048
-while true
-do
- echo "The default CPU cores is set to 4 and default memory (ram) is set to 2048"
- read -r -p "Would you like to change the cores or memory (Enter Y/n)? " corememyesno
+# Configure storage
+configure_storage() {
+    local storage vm_id="$1"
+    
+    # List available storages
+    echo "Available storages:"
+    mapfile -t storages < <(pvesm status -content images | awk 'NR>1 {print $1}')
+    
+    select storage in "${storages[@]}"; do
+        [[ -n "$storage" ]] && break
+        warning "Invalid selection"
+    done
+    
+    echo "$storage"
+}
 
- case $corememyesno in
-     [yY][eE][sS]|[yY])
- echo
- read -p "Enter number of cores for VM $VMID: " CORES
- echo
- read -p "Enter how much memory for the VM $VMID (example 2048 is 2Gb of memory): " MEMORY
- break
- ;;
-     [nN][oO]|[nN])
- CORES="4"
- MEMORY="2048"
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/n or Yes/no"
- ;;
- esac
-done
-echo
+# Import cloud image
+import_image() {
+    local vm_id="$1" storage="$2" os="$3"
+    local image_url="${CLOUD_IMAGES[$os]}"
+    local image_file="/tmp/$(basename "$image_url")"
+    
+    info "Downloading cloud image..."
+    wget -O "$image_file" "$image_url" || error_exit "Failed to download image"
+    
+    info "Importing disk..."
+    qm importdisk "$vm_id" "$image_file" "$storage" || error_exit "Failed to import disk"
+    
+    rm -f "$image_file"
+}
 
+# Configure cloud-init
+configure_cloudinit() {
+    local vm_id="$1" username="$2" password="$3" ssh_key="$4" ssh_auth="$5"
+    local config_dir="/etc/pve/nodes/$(hostname)/qemu-server"
+    
+    # Ensure directory exists
+    mkdir -p "$config_dir"
+    
+    # Create cloud-init config
+    cat > "$config_dir/$vm_id.conf" << EOF
+user: $username
+password: $password
+ssh_authorized_keys:
+  - ${ssh_key:-}
+chpasswd:
+  expire: false
+ssh_pwauth: $ssh_auth
+EOF
+}
 
-# Asking what type of processor and virtual machine to use
-# Default cpu type kvm and vm type i440fx
-while true
-do
- echo "The default CPU type is set to kvm64 and the machine type is set to i440fx"
- read -r -p "Would you like to change the cpu and vm type (Enter Y/n)? " cputypeyorno
+# Main function
+main() {
+    show_banner
+    check_prerequisites
+    
+    # Get basic VM configuration
+    local hostname vm_id
+    hostname=$(get_hostname)
+    vm_id=$(get_vm_id)
+    
+    # Get user credentials
+    eval "$(get_user_credentials)"
+    
+    # Configure storage
+    local storage
+    storage=$(configure_storage "$vm_id")
+    
+    # Select and import cloud image
+    echo "Available operating systems:"
+    select os in "${!CLOUD_IMAGES[@]}"; do
+        [[ -n "$os" ]] && break
+        warning "Invalid selection"
+    done
+    
+    # Create VM
+    configure_vm "$vm_id" "$hostname"
+    import_image "$vm_id" "$storage" "$os"
+    configure_cloudinit "$vm_id" "$username" "$password" "${ssh_key:-}" "$ssh_auth"
+    
+    success "VM $hostname ($vm_id) created successfully"
+    qm start "$vm_id"
+}
 
- case $cputypeyorno in
-    [yY][eE][sS]|[yY])
- echo
- read -p "Enter the cpu type for VM $VMID: " CPUTYPE
- echo
- read -p "Enter the vm type for VM $VMID (pc or q35): " VMTYPE
- break
- ;;
-     [nN][oO]|[nN])
- CPUTYPE="kvm64"
- VMTYPE="pc"
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/n or Yes/no"
- ;;
- esac
-done
-echo
-
-# Impostazioni scheda video macchina virtuale
-while true
-do
- echo "The default display type is set to serial terminal 0"
- read -r -p "Would you like to change the display type (Enter Y/n)? " displaytypeyesorno
-
- case $displaytypeyesorno in
-    [yY][eE][sS]|[yY])
- echo
- read -p "Enter the display type for VM $VMID (std, vmware, virtio-gl, qxl, serial0, virtio): " DISPLAYTYPE
- break
- ;;
-     [nN][oO]|[nN])
- DISPLAYTYPE="serial0"
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/n or Yes/no"
- ;;
- esac
-done
-echo
-
-# This block is see if they want to add a key to the VM
-# and then it checks the path to it and checks to make sure it exists
-echo
-while true
-do
- read -r -p "Do you want to add a ssh key by entering the path to the key? (Enter Y/n) " sshyesno
-
- case $sshyesno in
-     [yY][eE][sS]|[yY])
- while true; do
- echo
- read -p "Enter the path and key name (path/to/key.pub): " path_to_ssh_key
- echo
- [ -f "$path_to_ssh_key" ] && echo "It appears to be a good key path." && SSHAUTHKEYS=$(cat "$path_to_ssh_key") && break || echo && echo "Does not exist, try again please."
- done
- break
- ;;
-     [nN][oO]|[nN])
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/N or yes/no"
- ;;
- esac
-done
-echo
-
-# Setting if user can use a password to ssh or just keys
-# default is set to keys only so must say yes for password ssh
-while true
-do
- read -r -p "Do you want ssh password authentication (Enter Y/n)? " sshpassyesorno
-
- case $sshpassyesorno in
-     [yY][eE][sS]|[yY])
- echo
- sshpassallow=True
- break
- ;;
-     [nN][oO]|[nN])
- sshpassallow=False
- echo
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/N or yes/no"
- ;;
- esac
-done
-echo
-
-# GOING TO SETUP OTHER PACKAGE INSTALL OPTIONS ON FIRST RUN
-# EXAMPLE WOULD BE 
-# qm set VMID --agent 1
-# qemu-guest-agent
-while true
-do
- read -r -p "Would you like to install qemu-guest-agent on first run? (Enter Y/n) " qemuyesno
-
- case $qemuyesno in
-     [yY][eE][sS]|[yY])
- QEMUGUESTAGENT=y
- break
- ;;
-     [nN][oO]|[nN])
- QEMUGUESTAGENT=n
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/n or yes/no"
- ;;
- esac
-done
-echo
-while true
-do
- read -r -p "Do you want the VM to autostart after you create it here? (Enter Y/n)? " AUTOSTARTS
-
- case $AUTOSTARTS in
-     [yY][eE][sS]|[yY])
- echo
- AUTOSTART=yes
- break
- ;;
-     [nN][oO]|[nN])
- AUTOSTART=no
- echo
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/N or yes/no"
- ;;
- esac
-done
-
-echo
-# This block of code is for picking which node to have the VM on.
-# Couple things it creates the VM on the current node, then migrate's
-# to the node you selected, so must have shared storage (at least for
-# what I have tested or storages that are the same).  I run
-# ceph on my cluster, so its easy to migrate them.
-echo
-echo "   PLEASE READ - THIS IS FOR PROXMOX CLUSTERS "
-echo "   This will allow you to pick the Proxmox node for the VM to be on once it is completed "
-echo "   BUT "
-echo "   It will start on the proxmox node you are on and then it will use "
-echo "   qm migrate to the target node (JUST FYI) "
-echo
-
-if [ -f "/etc/pve/corosync.conf" ];
-then
-localnode=$(cat '/etc/hostname')
-while true
-do
- read -p "Enter Yes/y to pick the node to install the virtual machine onto OR enter No/n to use current node of $localnode : " NODESYESNO
-
- case $NODESYESNO in
-     [yY][eE][sS]|[yY])
- echo "Please select the NODE to migrate the Virtual Machine to after creation (current node $localnode)"
- nodesavailable=$(pvecm nodes | awk '{print $3}' | sed '/Name/d')
- nodesavailabe2=$(echo "${nodesavailable[@]}")
- declare -a NODESELECTION=( ${nodesavailabe2[@]} )
- total_num_nodes=${#NODESELECTION[@]}
- echo $total_num_nodes
-
- select option in $nodesavailabe2; do
- if [ 1 -le "$REPLY" ] && [ "$REPLY" -le $total_num_nodes ];
- then
-         migratenode=$option
-         break;
- else
-         echo "Incorrect Input: Select a number 1-$total_num_nodes"
- fi
- done
-
- echo
- echo "The Virtual Machine $VMID with be on $migratenode after it is created and moved"
- echo
- NODESYESNO=y
- break
- ;;
-     [nN][oO]|[nN])
- NODESYESNO=n
- break
-        ;;
-     *)
- echo "Invalid input, please enter Y/n or yes/no"
- ;;
- esac
-done
-else
- NODESYESNO=n
-fi
-echo
-while true
-do
- read -r -p "Do you want VM protection enabled[Y/n]: " PROTECTVM
-
- case $PROTECTVM in
-     [yY][eE][sS]|[yY])
- break
- ;;
-     [nN][oO]|[nN])
- break
-        ;;
-     *)
- echo "INVALID INPUT, PLEASE ENTER [Y/n]"
- ;;
- esac
-done
-echo
-echo
-echo "Please select the cloud image you would like to use"
-PS3='Select an option and press Enter: '
-options=("Ubuntu Noble 24.04 Cloud Image" "Ubuntu Jammy 22.04 Cloud Image" "Ubuntu Mantic 23.10 Cloud Image" "Ubuntu Focal 20.04 Cloud Image" "Arch Linux Cloud Image" "AlmaLinux 9.3 Cloud Image" "CentOS 7 Cloud Image" "Debian 12 Cloud Image" "Debian 11 Cloud Image" "Fedora 40 Cloud Image" "Fedora 39 Cloud Image" "Fedora 38 Cloud Image" "Rocky Linux 9.3 Cloud Image")
-select osopt in "${options[@]}"
-do
-  case $osopt in
-        "Ubuntu Noble 24.04 Cloud Image")
-          [ -f "$isostorage/noble-server-cloudimg-amd64.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img -P $isostorage && break
-          ;;
-        "Ubuntu Mantic 23.10 Cloud Image")
-          [ -f "$isostorage/mantic-server-cloudimg-amd64-disk-kvm.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/mantic/current/mantic-server-cloudimg-amd64.img -P $isostorage && break
-          ;;
-        "Ubuntu Jammy 22.04 Cloud Image")
-          [ -f "$isostorage/jammy-server-cloudimg-amd64-disk-kvm.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img -P $isostorage && break
-          ;;
-        "Ubuntu Focal 20.04 Cloud Image")
-          [ -f "$isostorage/focal-server-cloudimg-amd64-disk-kvm.img" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64-disk-kvm.img -P $isostorage && break
-          ;;
-        "Arch Linux Cloud Image")
-          [ -f "$isostorage/Arch-Linux-x86_64-cloudimg.qcow2" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2 -P $isostorage && break
-          ;;
-        "AlmaLinux 9.3 Cloud Image")
-          [ -f "$isostorage/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2" ] && echo && echo "Moving on you have this cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://repo.almalinux.org/almalinux/9.3/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2 -P $isostorage && break
-          ;;
-        "Fedora 40 Cloud Image")
-          [ -f "$isostorage/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://mirror.init7.net/fedora/fedora/linux/releases/40/Cloud/x86_64/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2 -P $isostorage && break
-          ;;
-        "Fedora 39 Cloud Image")
-          [ -f "$isostorage/Fedora-Cloud-Base-39-1.5.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://mirror.init7.net/fedora/fedora/linux/releases/39/Cloud/x86_64/images/Fedora-Cloud-Base-39-1.5.x86_64.qcow2 -P $isostorage && break
-          ;;
-        "Rocky Linux 9.3 Cloud Image")
-         [ -f "$isostorage/Rocky-9-GenericCloud.latest.x86_64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://download.rockylinux.org/pub/rocky/9.3/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2 -P $isostorage && break
-          ;;
-        "Debian 12 Cloud Image")
-         [ -f "$isostorage/debian-12-generic-amd64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2 -P $isostorage && break
-          ;;
-        "Debian 11 Cloud Image")
-         [ -f "$isostorage/debian-11-generic-amd64.qcow2" ] && echo && echo "Moving on you have his cloud image" && break || echo && echo "You do not have this cloud image file so we are downloading it now" && echo && wget https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2 -P $isostorage && break
-          ;;
-        *) echo "invalid option";;
-  esac
-done
-echo
-echo "You have selected Cloud Image $osopt"
-echo
-
-# setting the Cloud Image for later for qm info
-if [ "$osopt" == "Arch Linux Cloud Image" ];
-then
-   cloudos=$isostorage'Arch-Linux-x86_64-cloudimg.qcow2'
-elif [ "$osopt" == "Ubuntu Focal 20.04 Cloud Image" ];
-then
-   cloudos=$isostorage'focal-server-cloudimg-amd64-disk-kvm.img'
-elif [ "$osopt" == "Ubuntu Noble 24.04 Cloud Image" ];
-then
-   cloudos=$isostorage'noble-server-cloudimg-amd64.img' 
-elif [ "$osopt" == "AlmaLinux 9.3 Cloud Image" ];
-then
-   cloudos=$isostorage'AlmaLinux-9-GenericCloud-latest.x86_64.qcow2'
-elif [ "$osopt" == "Rocky Linux 9.3 Cloud Image" ];
-then
-   cloudos=$isostorage'Rocky-9-GenericCloud.latest.x86_64.qcow2'
-elif [ "$osopt" == "Debian 12 Cloud Image" ];
-then
-   cloudos=$isostorage'debian-12-generic-amd64.qcow2'
-elif [ "$osopt" == "Debian 11 Cloud Image" ];
-then
-   cloudos=$isostorage'debian-11-generic-amd64.qcow2'
-elif [ "$osopt" == "Fedora 40 Cloud Image" ];
-then
-   cloudos=$isostorage'Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2'
-elif [ "$osopt" == "Ubuntu Mantic 23.04 Cloud Image" ];
-then
-   cloudos=$isostorage'mantic-server-cloudimg-amd64.img'
-elif [ "$osopt" == "Ubuntu Jammy 22.04 Cloud Image" ];
-then
-   cloudos=$isostorage'jammy-server-cloudimg-amd64-disk-kvm.img'
-else [ "$osopt" == "Fedora 39 Cloud Image" ];
-   cloudos=$isostorage'Fedora-Cloud-Base-39-1.5.x86_64.qcow2'
-fi
-echo
-
-# just in case you are reusing ID's - which most do so...
-# next line removes any existing one for this vmid we are setting up
-[ -f "$snippetstorage$VMID.yaml" ] && rm $snippetstorage$VMID.yaml
-
-#cloud-config data for user
-echo "#cloud-config" >> $snippetstorage$VMID.yaml
-echo "hostname: $NEWHOSTNAME" >> $snippetstorage$VMID.yaml
-echo "manage_etc_hosts: true" >> $snippetstorage$VMID.yaml
-echo "user: $USER" >> $snippetstorage$VMID.yaml
-echo "password: $kindofsecure" >> $snippetstorage$VMID.yaml
-echo "ssh_authorized_keys:" >> $snippetstorage$VMID.yaml
-echo "  - $SSHAUTHKEYS" >> $snippetstorage$VMID.yaml
-#echo "$SSHAUTHKEYS" >> $snippetstorage$VMID.yaml
-echo "chpasswd:" >> $snippetstorage$VMID.yaml
-echo "  expire: False" >> $snippetstorage$VMID.yaml
-echo "ssh_pwauth: $sshpassallow" >> $snippetstorage$VMID.yaml
-echo "users:" >> $snippetstorage$VMID.yaml
-echo "  - default" >> $snippetstorage$VMID.yaml
-echo "package_upgrade: true" >> $snippetstorage$VMID.yaml
-echo "packages:" >> $snippetstorage$VMID.yaml
-if [[ $QEMUGUESTAGENT =~ ^[Yy]$ || $QEMUGUESTAGENT =~ ^[yY][eE][sS] ]]
-then
-    echo " - qemu-guest-agent" >> $snippetstorage$VMID.yaml
-    echo "runcmd:" >> $snippetstorage$VMID.yaml
-    echo " - systemctl restart qemu-guest-agent" >> $snippetstorage$VMID.yaml
-fi
-
-# create a new VM
-qm create $VMID --name $NEWHOSTNAME --cores $CORES --onboot 1 --cpu $CPUTYPE --machine $VMTYPE --memory $MEMORY --agent 1,fstrim_cloned_disks=1
-
-if [[ $VLANYESORNO =~ ^[Yy]$ || $VLANYESORNO =~ ^[yY][eE][sS] ]]
-then
-    qm set $VMID --net0 virtio,bridge=$vmbrused,tag=$VLAN
-else
-    qm set $VMID --net0 virtio,bridge=$vmbrused
-fi
-
-# import the downloaded disk to local-lvm storage
-
-if [[ $vmstorage == "local" ]]
-then
-   qm importdisk $VMID $cloudos $vmstorage -format qcow2
-else
-   qm importdisk $VMID $cloudos $vmstorage
-fi
-
-if [[ $vmstorage == "local" ]]
-then
-   qm set $VMID --scsihw virtio-scsi-pci --scsi0 /var/lib/vz/images/$VMID/vm-$VMID-disk-0.qcow2,discard=on
-else
-   qm set $VMID --scsihw virtio-scsi-pci --scsi0 $vmstorage:vm-$VMID-disk-0,discard=on
-fi
-
-# cd drive for cloudinit info
-qm set $VMID --ide2 $vmstorage:cloudinit
-
-# make it boot hard drive only
-qm set $VMID --boot c --bootdisk scsi0
-
-qm set $VMID --serial0 socket --vga $DISPLAYTYPE
-
-#Here we are going to set the network stuff from above
-if [[ $DHCPYESORNO =~ ^[Yy]$ || $DHCPYESORNO =~ ^[yY][eE][sS] ]]
-then
-    qm set $VMID --ipconfig0 ip=dhcp
-else
-    qm set $VMID --ipconfig0 ip=$IPADDRESS,gw=$GATEWAY
-fi
-
-# Addding to the default disk size if selected from above
-if [[ $RESIZEDISK =~ ^[Yy]$ || $RESIZEDISK =~ ^[yY][eE][sS] ]]
-then
-    qm resize $VMID scsi0 +"$ADDDISKSIZE"G
-fi
-
-if [[ "$PROTECTVM" =~ ^[Yy]$ || "$PROTECTVM" =~ ^[yY][eE][sS] ]]
-then
-    qm set "$VMID" --protection 1
-else
-    qm set "$VMID" --protection 0
-fi
-
-# Disabling tablet mode, usually is enabled but don't need it
-qm set $VMID --tablet 0
-
-# Setting the cloud-init user information
-qm set $VMID --cicustom "user=$snipstorage:snippets/$VMID.yaml"
-
-echo
-while true
-do
- read -r -p "Do you want to turn this into a TEMPLATE VM [Y/n]: " TEMPLATEVM
-
- case "$TEMPLATEVM" in
-     [yY][eE][sS]|[yY])
- break
- ;;
-     [nN][oO]|[nN])
- break
-        ;;
-     *)
- echo "INVALID INPUT, PLEASE ENTER [Y/n]"
- ;;
- esac
-done
-
-if [[ "$TEMPLATEVM" =~ ^[Yy]$ || "$TEMPLATEVM" =~ ^[yY][eE][sS] ]]
-then
-    qm template "$VMID"
-    echo "You can now use this as a template"
-    exit 0
-fi
-
-## Start the VM after Creation!!!!
-if [[ $AUTOSTART =~ ^[Yy]$ || $AUTOSTART =~ ^[yY][eE][sS] ]]
-then
-    qm start $VMID
-fi
-
-# Migrating VM to the correct node if selected
-if [[ $NODESYESNO =~ ^[Yy]$ || $NODESYESNO =~ ^[yY][eE][sS] ]]
-then
-    qm migrate $VMID $migratenode --online
-fi
+# Run script
+main "$@"
