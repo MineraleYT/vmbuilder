@@ -184,9 +184,16 @@ check_prerequisites() {
         command -v "$cmd" >/dev/null 2>&1 || error_exit "Required command not found: $cmd"
     done
 
-    # Recommend jq for better JSON handling
+    # Install jq if not present
     if ! command -v jq >/dev/null 2>&1; then
-        warning "jq is recommended for better JSON handling. Install with: apt install jq"
+        info "Installing jq..."
+        if ! apt-get update >/dev/null 2>&1; then
+            error_exit "Failed to update package lists"
+        fi
+        if ! DEBIAN_FRONTEND=noninteractive apt-get install -y jq >/dev/null 2>&1; then
+            error_exit "Failed to install jq"
+        fi
+        success "jq installed successfully"
     fi
 
     echo
