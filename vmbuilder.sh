@@ -12,6 +12,7 @@ set -euo pipefail
 
 # Constants
 readonly GITHUB_REPO="mineraleyt/vmbuilder"
+readonly GITHUB_BRANCH="dev"  # Change to "main" for stable version
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_PATH="$(readlink -f "$0")"
 readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
@@ -118,7 +119,7 @@ check_for_updates() {
     local temp_file
     temp_file=$(mktemp)
     
-    if curl -sL "https://raw.githubusercontent.com/$GITHUB_REPO/main/vmbuilder.sh" -o "$temp_file"; then
+    if curl -sL "https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH/vmbuilder.sh" -o "$temp_file"; then
         if ! cmp -s "$SCRIPT_PATH" "$temp_file"; then
             echo -e "${YELLOW}New updates available!${NC}"
             read -r -p "Would you like to update now? [y/N] " response
@@ -155,20 +156,25 @@ check_for_updates() {
 # Display banner
 show_banner() {
     clear
-    echo "#############################################################################################"
-    echo "###"
-    echo "# Welcome to the Proxmox Virtual Machine Builder script that uses Cloud Images"
-    echo "# This will automate so much and make it so easy to spin up a VM machine from a cloud image."
-    echo "# A VM Machine typically will be spun up and ready in less then 3 minutes."
-    echo "#"
-    echo "# Originally written by Francis Munch"
-    echo "# github: https://github.com/francismunch/vmbuilder"
-    echo "#"
-    echo "# Updated and maintained by Mineraleyt"
-    echo "# github: https://github.com/mineraleyt/vmbuilder"
-    echo "###"
-    echo "#############################################################################################"
-    echo
+    cat << "EOF"
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                    🚀 Proxmox Virtual Machine Builder                          ║
+╠════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                ║
+║  Create cloud-based VMs in Proxmox quickly and easily                          ║
+║  Typical deployment time: < 3 minutes                                          ║
+║                                                                                ║
+║  Features:                                                                     ║
+║  • Automated cloud image deployment                                            ║
+║  • Multiple OS support (Ubuntu, Debian, Fedora, etc.)                          ║
+║  • User and SSH key configuration                                              ║
+║  • Network and storage customization                                           ║
+║                                                                                ║
+╠════════════════════════════════════════════════════════════════════════════════╣
+║  📦 Originally by Francis Munch  (github.com/francismunch/vmbuilder)           ║
+║  🔧 Maintained by Mineraleyt     (github.com/mineraleyt/vmbuilder)             ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+EOF
     echo
 }
 
