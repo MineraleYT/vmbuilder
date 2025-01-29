@@ -73,40 +73,43 @@ select_cloud_image() {
     local image_url=""
     
     # Check if jq is available for better JSON parsing
-    if command -v jq >/dev/null 2>&1; then
-        # Use jq to get formatted list of images
-        echo "Available operating systems:"
-        echo
-        
-        # Create formatted list with numbers
-        local count=1
-        while IFS= read -r line; do
-            printf "%2d) %-20s %-10s %-15s\n" "$count" \
-                "$(echo "$line" | jq -r '.os')" \
-                "$(echo "$line" | jq -r '.version')" \
-                "$(echo "$line" | jq -r '.codename // ""')"
-            ((count++))
-        done < <(jq -c '.images[]' "$CLOUD_IMAGES_FILE")
-        
-        # Get user selection
-        local selection
-        while true; do
-            read -r -p "Select an operating system (enter number): " selection
-            if [[ "$selection" =~ ^[0-9]+$ ]] && \
-               [ "$selection" -ge 1 ] && \
-               [ "$selection" -le "$(jq '.images | length' "$CLOUD_IMAGES_FILE")" ]; then
-                image_url=$(jq -r ".images[$(( selection - 1 ))].url" "$CLOUD_IMAGES_FILE")
-                break
-            else
-                warning "Invalid selection. Please try again."
-            fi
-        done
-    else
+    if ! command -v jq >/dev/null 2>&1; then
         error_exit "jq is required for OS selection"
     fi
+
+    # Create array of OS information
+    declare -a os_list
+    while IFS= read -r os_info; do
+        os_list+=("$os_info")
+    done < <(jq -r '.images[] | "\(.os)|\(.version)|\(.codename // \"-\")"' "$CLOUD_IMAGES_FILE")
+
+    # Display available operating systems
+    echo "Available operating systems:"
+    echo
+    local i=1
+    for os_info in "${os_list[@]}"; do
+        IFS='|' read -r os version codename <<< "$os_info"
+        printf "%2d) %-20s %-10s %-15s\n" "$i" "$os" "$version" "$codename"
+        ((i++))
+    done
+    echo
+
+    # Get user selection
+    local selection
+    while true; do
+        read -r -p "Select an operating system (enter number): " selection
+        if [[ "$selection" =~ ^[0-9]+$ ]] && \
+           [ "$selection" -ge 1 ] && \
+           [ "$selection" -le "${#os_list[@]}" ]; then
+            image_url=$(jq -r ".images[$(( selection - 1 ))].url" "$CLOUD_IMAGES_FILE")
+            break
+        else
+            warning "Invalid selection. Please try again."
+        fi
+    done
     
     [[ -n "$image_url" ]] || error_exit "Failed to get image URL"
-    echo "$image_url"
+    printf "%s" "$image_url"
 }
 
 # Check for script updates
@@ -310,10 +313,14 @@ configure_vm() {
     temp_dir=$(mktemp -d)
     image_file="$temp_dir/$(basename "$image_url")"
     
-    info "Downloading cloud image from: $image_url"
-    if ! wget --progress=bar:force:noscroll -O "$image_file" "$image_url" 2>&1; then
+    info "Starting cloud image download..."
+    echo "URL: $image_url"
+    echo "Destination: $image_file"
+    echo
+
+    if ! wget --quiet --show-progress --progress=bar:force:noscroll -O "$image_file" "$image_url" 2>&1; then
         rm -rf "$temp_dir"
-        error_exit "Failed to download cloud image"
+        error_exit "Failed to download cloud image. Please check your internet connection and try again."
     fi
     
     # Verify file was downloaded and is not empty
@@ -397,22 +404,37 @@ main() {
     check_prerequisites
     
     # Get basic VM configuration
-    local hostname vm_id image_url
-    hostname=$(get_hostname)
-    vm_id=$(get_vm_id)
-    image_url=$(select_cloud_image)
+    local hostname vm_id image_url user_creds storage
     
-    # Get user credentials
-    eval "$(get_user_credentials)"
+    info "Configuring VM basics..."
+    hostname=$(get_hostname) || error_exit "Failed to get hostname"
+    vm_id=$(get_vm_id) || error_exit "Failed to get VM ID"
     
-    # Configure storage
-    local storage
-    storage=$(configure_storage)
+    echo
+    info "Selecting operating system..."
+    image_url=$(select_cloud_image) || error_exit "Failed to select operating system"
     
-    # Create VM
+    echo
+    info "Configuring user access..."
+    user_creds=$(get_user_credentials) || error_exit "Failed to get user credentials"
+    eval "$user_creds"
+    
+    echo
+    info "Configuring storage..."
+    storage=$(configure_storage) || error_exit "Failed to configure storage"
+    
+    echo
+    info "Creating and configuring VM..."
     configure_vm "$vm_id" "$hostname" "$image_url"
     
-    success "VM $hostname ($vm_id) created successfully"
+    echo
+    info "VM Details:"
+    echo "  Hostname: $hostname"
+    echo "  VM ID: $vm_id"
+    echo "  Storage: $storage"
+    echo
+    success "VM creation completed successfully"
+    echo "You can manage this VM through the Proxmox web interface or using 'qm' commands"
 }
 
 # Run script
