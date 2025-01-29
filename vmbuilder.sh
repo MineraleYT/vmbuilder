@@ -16,7 +16,7 @@ readonly GITHUB_BRANCH="dev"  # Change to "main" for stable version
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_PATH="$(readlink -f "$0")"
 readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
-readonly CLOUD_IMAGES_FILE="/cloud_images.json"
+readonly CLOUD_IMAGES_FILE="./cloud_images.json"
 readonly MIN_DISK_SIZE=1
 readonly MAX_DISK_SIZE=2048
 readonly DEFAULT_CORES=4
@@ -52,18 +52,33 @@ info() {
 # Load cloud images
 load_cloud_images() {
     [[ -f "$CLOUD_IMAGES_FILE" ]] || error_exit "Cloud images file not found: $CLOUD_IMAGES_FILE"
+    [[ -r "$CLOUD_IMAGES_FILE" ]] || error_exit "Cannot read cloud images file: $CLOUD_IMAGES_FILE"
     
-    # Check if jq is available
+    # Check if jq is available and validate JSON structure
     if command -v jq >/dev/null 2>&1; then
+        # Basic JSON syntax check
         if ! jq empty "$CLOUD_IMAGES_FILE" 2>/dev/null; then
-            error_exit "Invalid JSON in cloud images file"
+            error_exit "Invalid JSON syntax in cloud images file"
+        fi
+        
+        # Check for required structure
+        if ! jq -e '.images' "$CLOUD_IMAGES_FILE" >/dev/null 2>&1; then
+            error_exit "Missing 'images' array in cloud images file"
+        fi
+        
+        # Check if images array is empty
+        if [[ $(jq '.images | length' "$CLOUD_IMAGES_FILE") -eq 0 ]]; then
+            error_exit "No operating systems defined in cloud images file"
+        fi
+        
+        # Validate structure of each image entry
+        local invalid_entries
+        invalid_entries=$(jq -r '.images[] | select(.os == null or .version == null or .url == null) | .os + " " + .version' "$CLOUD_IMAGES_FILE")
+        if [[ -n "$invalid_entries" ]]; then
+            error_exit "Invalid image entries found: missing required fields (os, version, url)"
         fi
     else
-        warning "jq not found. Basic JSON validation only."
-        # Basic check for valid JSON
-        if ! grep -q '^{' "$CLOUD_IMAGES_FILE"; then
-            error_exit "Invalid JSON in cloud images file"
-        fi
+        error_exit "jq is required for JSON parsing but not found"
     fi
 }
 
@@ -77,32 +92,39 @@ select_cloud_image() {
         error_exit "jq is required for OS selection"
     fi
 
+    # Create a temporary file for the formatted list
+    local temp_file
+    temp_file=$(mktemp)
+
+    # Get the list of operating systems with numbers
+    echo "Available operating systems:"
+    echo
+    jq -r '.images | to_entries[] | [(.key+1|tostring), .value.os, .value.version, (.value.codename//"-")] | join("\t")' "$CLOUD_IMAGES_FILE" > "$temp_file"
+
+    # Display formatted list
+    while IFS=$'\t' read -r num os version codename; do
+        printf "%2s) %-20s %-10s %-15s\n" "$num" "$os" "$version" "$codename"
+    done < "$temp_file"
+    echo
+
     # Get total number of images
     local total_images
     total_images=$(jq '.images | length' "$CLOUD_IMAGES_FILE")
-
-    # Display available operating systems
-    echo "Available operating systems:"
-    echo
-    jq -r '.images | to_entries[] | "\(.key+1)) \(.value.os)\t\(.value.version)\t\(.value.codename // \"-\")"' "$CLOUD_IMAGES_FILE" | \
-        while IFS=$'\t' read -r num os version codename; do
-            printf "%s %-20s %-10s %-15s\n" "$num" "$os" "$version" "$codename"
-        done
-    echo
 
     # Get user selection
     local selection
     while true; do
         read -r -p "Select an operating system (enter number): " selection
-        if [[ "$selection" =~ ^[0-9]+$ ]] && \
-           [ "$selection" -ge 1 ] && \
-           [ "$selection" -le "$total_images" ]; then
+        if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -ge 1 ] && [ "$selection" -le "$total_images" ]; then
             image_url=$(jq -r ".images[$(( selection - 1 ))].url" "$CLOUD_IMAGES_FILE")
             break
         else
             warning "Invalid selection. Please try again."
         fi
     done
+
+    # Cleanup
+    rm -f "$temp_file"
     
     [[ -n "$image_url" ]] || error_exit "Failed to get image URL"
     printf "%s" "$image_url"
