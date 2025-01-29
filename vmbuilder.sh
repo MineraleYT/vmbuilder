@@ -16,7 +16,7 @@ readonly GITHUB_BRANCH="dev"  # Change to "main" for stable version
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_PATH="$(readlink -f "$0")"
 readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
-readonly CLOUD_IMAGES_FILE="$SCRIPT_DIR/cloud_images.json"
+readonly CLOUD_IMAGES_FILE="/cloud_images.json"
 readonly MIN_DISK_SIZE=1
 readonly MAX_DISK_SIZE=2048
 readonly DEFAULT_CORES=4
@@ -77,21 +77,17 @@ select_cloud_image() {
         error_exit "jq is required for OS selection"
     fi
 
-    # Create array of OS information
-    declare -a os_list
-    while IFS= read -r os_info; do
-        os_list+=("$os_info")
-    done < <(jq -r '.images[] | "\(.os)|\(.version)|\(.codename // \"-\")"' "$CLOUD_IMAGES_FILE")
+    # Get total number of images
+    local total_images
+    total_images=$(jq '.images | length' "$CLOUD_IMAGES_FILE")
 
     # Display available operating systems
     echo "Available operating systems:"
     echo
-    local i=1
-    for os_info in "${os_list[@]}"; do
-        IFS='|' read -r os version codename <<< "$os_info"
-        printf "%2d) %-20s %-10s %-15s\n" "$i" "$os" "$version" "$codename"
-        ((i++))
-    done
+    jq -r '.images | to_entries[] | "\(.key+1)) \(.value.os)\t\(.value.version)\t\(.value.codename // \"-\")"' "$CLOUD_IMAGES_FILE" | \
+        while IFS=$'\t' read -r num os version codename; do
+            printf "%s %-20s %-10s %-15s\n" "$num" "$os" "$version" "$codename"
+        done
     echo
 
     # Get user selection
@@ -100,7 +96,7 @@ select_cloud_image() {
         read -r -p "Select an operating system (enter number): " selection
         if [[ "$selection" =~ ^[0-9]+$ ]] && \
            [ "$selection" -ge 1 ] && \
-           [ "$selection" -le "${#os_list[@]}" ]; then
+           [ "$selection" -le "$total_images" ]; then
             image_url=$(jq -r ".images[$(( selection - 1 ))].url" "$CLOUD_IMAGES_FILE")
             break
         else
