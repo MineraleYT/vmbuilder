@@ -70,6 +70,7 @@ load_cloud_images() {
 # Select cloud image
 select_cloud_image() {
     load_cloud_images
+    local image_url=""
     
     # Check if jq is available for better JSON parsing
     if command -v jq >/dev/null 2>&1; then
@@ -77,33 +78,34 @@ select_cloud_image() {
         echo "Available operating systems:"
         echo
         
-        # Create array of OS choices
-        mapfile -t os_list < <(jq -r '.images[] | "\(.os) \(.version) (\(.codename // ""))"' "$CLOUD_IMAGES_FILE" | sed 's/  / /g' | sed 's/ ()//g')
+        # Create formatted list with numbers
+        local count=1
+        while IFS= read -r line; do
+            printf "%2d) %-20s %-10s %-15s\n" "$count" \
+                "$(echo "$line" | jq -r '.os')" \
+                "$(echo "$line" | jq -r '.version')" \
+                "$(echo "$line" | jq -r '.codename // ""')"
+            ((count++))
+        done < <(jq -c '.images[]' "$CLOUD_IMAGES_FILE")
         
-        PS3="Select an operating system (enter number): "
-        select os in "${os_list[@]}"; do
-            if [[ -n "$os" ]]; then
-                # Get the URL for selected OS
-                local os_name version
-                read -r os_name version _ <<< "$os"
-                image_url=$(jq -r --arg os "$os_name" --arg ver "$version" '.images[] | select(.os == $os and .version == $ver) | .url' "$CLOUD_IMAGES_FILE")
+        # Get user selection
+        local selection
+        while true; do
+            read -r -p "Select an operating system (enter number): " selection
+            if [[ "$selection" =~ ^[0-9]+$ ]] && \
+               [ "$selection" -ge 1 ] && \
+               [ "$selection" -le "$(jq '.images | length' "$CLOUD_IMAGES_FILE")" ]; then
+                image_url=$(jq -r ".images[$(( selection - 1 ))].url" "$CLOUD_IMAGES_FILE")
                 break
             else
                 warning "Invalid selection. Please try again."
             fi
         done
     else
-        # Fallback to basic parsing if jq is not available
-        warning "jq not installed. Using basic selection method."
-        # Read the file line by line and extract OS information
-        while IFS= read -r line; do
-            if [[ $line =~ \"os\":\ *\"([^\"]+)\" ]]; then
-                os_name="${BASH_REMATCH[1]}"
-                echo "$os_name"
-            fi
-        done < "$CLOUD_IMAGES_FILE"
+        error_exit "jq is required for OS selection"
     fi
     
+    [[ -n "$image_url" ]] || error_exit "Failed to get image URL"
     echo "$image_url"
 }
 
@@ -304,27 +306,88 @@ configure_vm() {
     info "Creating VM $vm_id ($hostname)..."
     
     # Download the cloud image
-    local image_file
-    image_file="/tmp/$(basename "$image_url")"
-    info "Downloading cloud image..."
-    wget -O "$image_file" "$image_url" || error_exit "Failed to download cloud image"
+    local image_file temp_dir
+    temp_dir=$(mktemp -d)
+    image_file="$temp_dir/$(basename "$image_url")"
+    
+    info "Downloading cloud image from: $image_url"
+    if ! wget --progress=bar:force:noscroll -O "$image_file" "$image_url" 2>&1; then
+        rm -rf "$temp_dir"
+        error_exit "Failed to download cloud image"
+    fi
+    
+    # Verify file was downloaded and is not empty
+    if [[ ! -s "$image_file" ]]; then
+        rm -rf "$temp_dir"
+        error_exit "Downloaded image file is empty"
+    fi
     
     # Create and configure VM
-    qm create "$vm_id" \
+    info "Creating VM configuration..."
+    if ! qm create "$vm_id" \
         --name "$hostname" \
         --cores "$cores" \
         --memory "$memory" \
         --net0 "virtio,bridge=vmbr0" \
         --bootdisk scsi0 \
         --onboot 1 \
-        --agent 1 || error_exit "Failed to create VM"
+        --agent 1; then
+        rm -rf "$temp_dir"
+        error_exit "Failed to create VM"
+    fi
     
     # Import the disk
     info "Importing disk..."
-    qm importdisk "$vm_id" "$image_file" "$storage" || error_exit "Failed to import disk"
+    if ! qm importdisk "$vm_id" "$image_file" "$storage"; then
+        rm -rf "$temp_dir"
+        qm destroy "$vm_id"
+        error_exit "Failed to import disk"
+    fi
+    
+    # Configure the imported disk
+    info "Configuring disk..."
+    if ! qm set "$vm_id" --scsihw virtio-scsi-pci --scsi0 "$storage:vm-$vm_id-disk-0,discard=on"; then
+        qm destroy "$vm_id"
+        error_exit "Failed to configure disk"
+    fi
+    
+    # Configure cloud-init
+    info "Setting up cloud-init..."
+    if ! qm set "$vm_id" --ide2 "$storage:cloudinit"; then
+        qm destroy "$vm_id"
+        error_exit "Failed to configure cloud-init drive"
+    fi
+    
+    # Set user data
+    if ! qm set "$vm_id" --ciuser "$username" --cipassword "$password" --sshkeys "$ssh_key"; then
+        qm destroy "$vm_id"
+        error_exit "Failed to configure cloud-init user data"
+    fi
+    
+    # Ask about disk resize
+    local disk_size
+    read -r -p "Enter additional disk size in GB (0 for no resize): " disk_size
+    if [[ "$disk_size" =~ ^[0-9]+$ ]] && [ "$disk_size" -gt 0 ]; then
+        info "Resizing disk..."
+        if ! qm resize "$vm_id" scsi0 "+${disk_size}G"; then
+            warning "Failed to resize disk, continuing anyway..."
+        fi
+    fi
     
     # Clean up
-    rm -f "$image_file"
+    rm -rf "$temp_dir"
+    success "VM configured successfully"
+    
+    # Ask about starting the VM
+    read -r -p "Start the VM now? [y/N] " start_vm
+    if [[ "$start_vm" =~ ^[Yy] ]]; then
+        info "Starting VM..."
+        if ! qm start "$vm_id"; then
+            warning "Failed to start VM"
+        else
+            success "VM started successfully"
+        fi
+    fi
 }
 
 # Main function
