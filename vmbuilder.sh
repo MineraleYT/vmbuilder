@@ -51,27 +51,40 @@ info() {
 
 # Load cloud images
 load_cloud_images() {
+    echo "Debug: Checking cloud images file at $CLOUD_IMAGES_FILE"
     [[ -f "$CLOUD_IMAGES_FILE" ]] || error_exit "Cloud images file not found: $CLOUD_IMAGES_FILE"
     [[ -r "$CLOUD_IMAGES_FILE" ]] || error_exit "Cannot read cloud images file: $CLOUD_IMAGES_FILE"
     
+    echo "Debug: File contents:"
+    cat "$CLOUD_IMAGES_FILE"
+    echo
+    
     # Check if jq is available and validate JSON structure
     if command -v jq >/dev/null 2>&1; then
+        echo "Debug: jq is available, validating JSON"
+        
         # Basic JSON syntax check
         if ! jq empty "$CLOUD_IMAGES_FILE" 2>/dev/null; then
             error_exit "Invalid JSON syntax in cloud images file"
         fi
+        echo "Debug: JSON syntax is valid"
         
         # Check for required structure
         if ! jq -e '.images' "$CLOUD_IMAGES_FILE" >/dev/null 2>&1; then
             error_exit "Missing 'images' array in cloud images file"
         fi
+        echo "Debug: Found 'images' array"
         
         # Check if images array is empty
-        if [[ $(jq '.images | length' "$CLOUD_IMAGES_FILE") -eq 0 ]]; then
+        local image_count
+        image_count=$(jq '.images | length' "$CLOUD_IMAGES_FILE")
+        echo "Debug: Found $image_count images"
+        if [[ $image_count -eq 0 ]]; then
             error_exit "No operating systems defined in cloud images file"
         fi
         
         # Validate structure of each image entry
+        echo "Debug: Validating image entries"
         local invalid_entries
         invalid_entries=$(jq -r '.images[] | select(.os == null or .version == null or .url == null) | .os + " " + .version' "$CLOUD_IMAGES_FILE")
         if [[ -n "$invalid_entries" ]]; then
@@ -80,6 +93,8 @@ load_cloud_images() {
     else
         error_exit "jq is required for JSON parsing but not found"
     fi
+    
+    echo "Debug: Cloud images loaded successfully"
 }
 
 # Select cloud image
@@ -92,24 +107,20 @@ select_cloud_image() {
         error_exit "jq is required for OS selection"
     fi
 
-    # Create a temporary file for the formatted list
-    local temp_file
-    temp_file=$(mktemp)
+    # Get total number of images and validate JSON
+    local total_images
+    total_images=$(jq -r '.images | length' "$CLOUD_IMAGES_FILE") || error_exit "Failed to read OS list"
+    [[ $total_images -gt 0 ]] || error_exit "No operating systems found in configuration"
 
-    # Get the list of operating systems with numbers
+    # Display available operating systems
     echo "Available operating systems:"
     echo
-    jq -r '.images | to_entries[] | [(.key+1|tostring), .value.os, .value.version, (.value.codename//"-")] | join("\t")' "$CLOUD_IMAGES_FILE" > "$temp_file"
 
-    # Display formatted list
-    while IFS=$'\t' read -r num os version codename; do
-        printf "%2s) %-20s %-10s %-15s\n" "$num" "$os" "$version" "$codename"
-    done < "$temp_file"
+    # Format and display OS list using jq with explicit format string
+    jq -r --arg fmt "%d) %s %s (%s)\n" \
+       '.images | to_entries[] | $fmt | format((.key+1), .value.os, .value.version, (.value.codename // "-"))' \
+       "$CLOUD_IMAGES_FILE" || error_exit "Failed to display OS list"
     echo
-
-    # Get total number of images
-    local total_images
-    total_images=$(jq '.images | length' "$CLOUD_IMAGES_FILE")
 
     # Get user selection
     local selection
@@ -122,9 +133,6 @@ select_cloud_image() {
             warning "Invalid selection. Please try again."
         fi
     done
-
-    # Cleanup
-    rm -f "$temp_file"
     
     [[ -n "$image_url" ]] || error_exit "Failed to get image URL"
     printf "%s" "$image_url"
